@@ -1,47 +1,128 @@
 package Core;
 
+import Components.*;
+import Panels.*;
+import Constants.Colors;
+import Models.Sistema;
 import javax.swing.*;
 import java.awt.*;
-import UI.mapaPanel;
 
 public class MainFrame extends JFrame {
 
     private JPanel mainFrame;
-    private JPanel bgFrame;
-    private JPanel topBar;
-    private JPanel bottomBar;
     private JPanel selectedPanel;
-    private JPanel Dashboard;
-    private JButton solicitarViajeButton;
-    private JButton historialButton;
-    private JButton configuracionButton;
-    private JButton perfilButton;
+    private SideNavigation sideNav;
+    private mapaPanel panelMapa;
+    private TripInfoPanel tripPanel;
+    private Sistema sistema;
 
-    private mapaPanel panelMapa; // mantenemos una única instancia del mapa
+    // Paneles precargados
+    private DashboardPanel dashboardPanel;
+    private HistorialPanel historialPanel;
+    private ConfiguracionPanel configuracionPanel;
+    private PerfilPanel perfilPanel;
+
+    // Admin panel & stuff
+    private AdminMenuPanel adminPanel;
+
 
     public MainFrame() {
-        setContentPane(mainFrame);
+        sistema = Sistema.getInstancia();
+
+        initializePanels();
+        initComponents();
+        setupListeners();
+
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1020, 640);
         setLocationRelativeTo(null);
         setResizable(false);
+        setTitle("Sistema de Viajes");
 
-        // Inicializamos el panel del mapa solo una vez
+        mostrarPanel(dashboardPanel);
+        setVisible(true);
+    }
+
+    private void initializePanels() {
         panelMapa = new mapaPanel();
+        dashboardPanel = new DashboardPanel();
+        historialPanel = new HistorialPanel();
+        configuracionPanel = new ConfiguracionPanel();
+        perfilPanel = new PerfilPanel();
+        adminPanel = new AdminMenuPanel(sistema);
+    }
 
-        // Asignamos acciones a los botones (ejemplo)
-        solicitarViajeButton.addActionListener(e -> mostrarMapa());
+    private void initComponents() {
+        mainFrame = new JPanel(new BorderLayout());
+        mainFrame.setBackground(Colors.SECONDARY);
+
+        adminPanel.addVolverListener(e -> {
+            setContentPane(mainFrame);  // restaurar layout original
+            revalidate();
+            repaint();
+        });
+
+        // Top Bar
+        TopBar topBar = new TopBar("TravelApp", "Uaaaasuario");
+        topBar.addAdminButtonListener(e -> mostrarAdminMenu());
+        // Panel central
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(Colors.SECONDARY);
+
+        // Navegación lateral
+        sideNav = new SideNavigation();
+        centerPanel.add(sideNav, BorderLayout.WEST);
+
+        // Panel de contenido
+        selectedPanel = new JPanel(new BorderLayout());
+        selectedPanel.setBackground(Colors.SECONDARY);
+        centerPanel.add(selectedPanel, BorderLayout.CENTER);
+
+        mainFrame.add(topBar, BorderLayout.NORTH);
+        mainFrame.add(centerPanel, BorderLayout.CENTER);
+
+        setContentPane(mainFrame);
+    }
+
+    private void setupListeners() {
+        sideNav.addSolicitarViajeListener(e -> {
+            mostrarMapa();
+            sideNav.setSelectedButton("solicitar");
+        });
+
+        sideNav.addHistorialListener(e -> {
+            mostrarPanel(historialPanel);
+            sideNav.setSelectedButton("historial");
+        });
+
+        sideNav.addConfiguracionListener(e -> {
+            mostrarPanel(configuracionPanel);
+            sideNav.setSelectedButton("configuracion");
+        });
+
+        sideNav.addPerfilListener(e -> {
+            mostrarPanel(perfilPanel);
+            sideNav.setSelectedButton("perfil");
+        });
+    }
+
+    private void mostrarPanel(JPanel panel) {
+        selectedPanel.removeAll();
+        selectedPanel.add(panel, BorderLayout.CENTER);
+        selectedPanel.revalidate();
+        selectedPanel.repaint();
     }
 
     public void mostrarMapa() {
         selectedPanel.removeAll();
-        selectedPanel.setLayout(new BorderLayout());
         selectedPanel.add(panelMapa.getRootPanel(), BorderLayout.CENTER);
         selectedPanel.revalidate();
         selectedPanel.repaint();
     }
 
-    private void createUIComponents() {
-        // Aquí puedes crear componentes personalizados si usas IntelliJ GUI Designer
+    public void mostrarAdminMenu() {
+        setContentPane(adminPanel);
+        revalidate();
+        repaint();
     }
 }
