@@ -18,47 +18,33 @@ public class TopBar extends JPanel {
                 BorderFactory.createEmptyBorder(15, 25, 15, 25)
         ));
 
-        // Panel izquierdo con logo
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
+        // ---------- PANEL IZQUIERDO ----------
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 0));
         leftPanel.setOpaque(false);
 
-        JLabel logoLabel = new JLabel("🚗");
-        logoLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
-
-        JLabel titleLabel = new JLabel(appName);
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        JLabel titleLabel = new JLabel("🚗  " + appName);
+        titleLabel.setFont(new Font("Segoe UI Emoji", Font.BOLD, 24));
         titleLabel.setForeground(Colors.PRIMARY);
-
-        leftPanel.add(logoLabel);
+        titleLabel.setBorder(BorderFactory.createEmptyBorder(8, 0, 0, 0));
         leftPanel.add(titleLabel);
 
-        // Panel derecho con usuario (centrado verticalmente)
-        JPanel rightPanel = new JPanel(new GridBagLayout());
+        // ---------- PANEL DERECHO ----------
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightPanel.setOpaque(false);
 
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.gridy = 0;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.insets = new Insets(0, 5, 0, 5);
+        JLabel userLabel = new JLabel("👤  " + userName);
+        userLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
+        userLabel.setForeground(Colors.TEXT_PRIMARY);
+        userLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        userButton = new JButton(userName);
-        userButton.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        userButton.setForeground(Colors.TEXT_PRIMARY);
+        userButton = new JButton();
+        userButton.setLayout(new BorderLayout());
         userButton.setFocusPainted(false);
-        userButton.setContentAreaFilled(false);
         userButton.setBorderPainted(false);
-        userButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        userButton.setContentAreaFilled(false);
+        userButton.add(userLabel, BorderLayout.CENTER);
 
-        JLabel avatarLabel = new JLabel("👤");
-        avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
-
-        // Añadir con separación entre ellos
-        gbc.gridx = 0;
-        rightPanel.add(userButton, gbc);
-
-        gbc.gridx = 1;
-        gbc.insets = new Insets(0, 8, 0, 0);
-        rightPanel.add(avatarLabel, gbc);
+        rightPanel.add(userButton);
 
         add(leftPanel, BorderLayout.WEST);
         add(rightPanel, BorderLayout.EAST);

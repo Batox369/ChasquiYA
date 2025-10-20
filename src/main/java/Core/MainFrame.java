@@ -36,7 +36,7 @@ public class MainFrame extends JFrame {
         setResizable(false);
         setTitle("Sistema de Viajes");
 
-        mostrarMenuYDashboard();
+        mostrarMenuYPerfil();
         setVisible(true);
     }
 
@@ -112,12 +112,14 @@ public class MainFrame extends JFrame {
         // Listener del sidebar de viaje
         tripSidebar.addCancelarListener(e -> {
             panelMapa.resetearMapa();
-            mostrarMenuYDashboard();
+            mostrarMenuYPerfil();
+            sideNav.setSelectedButton("perfil");
         });
 
         tripSidebar.addSolicitarListener(e -> {
             panelMapa.confirmarViaje();
-            mostrarMenuYDashboard();
+            mostrarMenuYPerfil();
+            sideNav.setSelectedButton("perfil");
         });
     }
 
@@ -136,8 +138,8 @@ public class MainFrame extends JFrame {
         selectedPanel.repaint();
     }
 
-    public void mostrarMenuYDashboard() {
-        mostrarMenuYPanel(dashboardPanel);
+    public void mostrarMenuYPerfil() {
+        mostrarMenuYPanel(perfilPanel);
         sideNav.setSelectedButton("solicitar"); // Reset selección
     }
 

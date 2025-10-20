@@ -2,7 +2,9 @@ package Components;
 
 import Models.Viaje;
 import Models.Coordenada;
-import Constants.Colors;
+import Constants.*;
+
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -73,7 +75,7 @@ public class TripSidebarPanel extends JPanel {
         origenPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
         JLabel origenTitle = new JLabel("📍 Origen");
-        origenTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        origenTitle.setFont(UIFonts.EMOJI.deriveFont(Font.BOLD, 12f));
         origenTitle.setForeground(Colors.TEXT_PRIMARY);
 
         origenLabel = new JLabel("No seleccionado");
@@ -99,7 +101,7 @@ public class TripSidebarPanel extends JPanel {
         destinoPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 60));
 
         JLabel destinoTitle = new JLabel("📌 Destino");
-        destinoTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        destinoTitle.setFont(UIFonts.EMOJI.deriveFont(Font.BOLD, 12f));
         destinoTitle.setForeground(Colors.TEXT_PRIMARY);
 
         destinoLabel = new JLabel("No seleccionado");
@@ -144,12 +146,16 @@ public class TripSidebarPanel extends JPanel {
         row.setAlignmentX(Component.LEFT_ALIGNMENT);
         row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 
+        // Fuente con soporte para emojis
+        Font emojiFont = new Font("Segoe UI Emoji", Font.PLAIN, 11);
+        Font valueFont = new Font("Segoe UI", Font.BOLD, 11);
+
         JLabel labelText = new JLabel(label);
-        labelText.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        labelText.setFont(emojiFont);
         labelText.setForeground(Colors.TEXT_SECONDARY);
 
         JLabel valueLabel = new JLabel(value);
-        valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        valueLabel.setFont(valueFont);
         valueLabel.setForeground(Colors.TEXT_PRIMARY);
 
         row.add(labelText, BorderLayout.WEST);

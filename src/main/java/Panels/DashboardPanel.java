@@ -10,16 +10,11 @@ public class DashboardPanel extends JPanel {
     public DashboardPanel() {
         setLayout(new BorderLayout());
         setOpaque(false);
-        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JPanel statsGrid = new JPanel(new GridLayout(2, 2, 20, 20));
-        statsGrid.setOpaque(false);
+        JLabel label = new JLabel("Dashboard de Viajes", SwingConstants.CENTER);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 24));
+        label.setForeground(Colors.TEXT_PRIMARY);
 
-        statsGrid.add(new StatCard("Total Viajes", "45", "📊", Colors.PRIMARY));
-        statsGrid.add(new StatCard("En Proceso", "3", "🚗", Colors.ACCENT));
-        statsGrid.add(new StatCard("Completados", "42", "✓", Colors.SUCCESS));
-        statsGrid.add(new StatCard("Cancelados", "2", "✗", Colors.ERROR));
-
-        add(statsGrid, BorderLayout.CENTER);
+        add(label, BorderLayout.CENTER);
     }
 }

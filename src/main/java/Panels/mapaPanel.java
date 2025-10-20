@@ -40,7 +40,17 @@ public class mapaPanel {
         loadImage();
         initComponents();
         setupListeners();
-        centerMap();
+
+        // Ahora, ejecutamos el centrado solo cuando el panel esté realmente visible
+        rootPanel.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && rootPanel.isShowing()) {
+                SwingUtilities.invokeLater(() -> {
+                    centerMap();
+                    mapaCanvas.revalidate();
+                    mapaCanvas.repaint();
+                });
+            }
+        });
     }
 
     private void loadImage() {

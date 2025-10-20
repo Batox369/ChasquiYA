@@ -28,10 +28,11 @@ public class SideNavigation extends JPanel {
         navTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 15, 0));
         add(navTitle);
 
-        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "");
-        historialBtn = new ModernButton("Historial", "");
-        configuracionBtn = new ModernButton("Configuración", "");
-        perfilBtn = new ModernButton("Mi Perfil", "");
+        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "🚗");
+        historialBtn = new ModernButton("Historial", "📜");
+        configuracionBtn = new ModernButton("Configuración", "⚙️");
+        perfilBtn = new ModernButton("Mi Perfil", "👤");
+
 
         solicitarViajeBtn.setSelected(true);
 
