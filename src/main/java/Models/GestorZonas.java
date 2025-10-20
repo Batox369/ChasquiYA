@@ -8,57 +8,67 @@ public class GestorZonas {
 
     public GestorZonas() { }
 
-    // Inserta una nueva zona (BST por nombre, sin duplicados)
-    public void insertarZona(String nombre) {
-        raiz = insertarRec(raiz, nombre);
+    // Inserta una nueva zona en el ABB usando el ID como criterio
+    public void insertarZona(int id, String nombre) {
+        raiz = insertarRec(raiz, id, nombre);
     }
 
-    private Zona insertarRec(Zona nodo, String nombre) {
-        if (nodo == null) return new Zona(nombre);
-        int cmp = nombre.compareToIgnoreCase(nodo.getNombre());
-        if (cmp < 0) {
-            nodo.setIzquierda(insertarRec(nodo.getIzquierda(), nombre));
-        } else if (cmp > 0) {
-            nodo.setDerecha(insertarRec(nodo.getDerecha(), nombre));
+    private Zona insertarRec(Zona nodo, int id, String nombre) {
+        if (nodo == null) return new Zona(id, nombre);
+        if (id < nodo.getId()) {
+            nodo.setIzquierda(insertarRec(nodo.getIzquierda(), id, nombre));
+        } else if (id > nodo.getId()) {
+            nodo.setDerecha(insertarRec(nodo.getDerecha(), id, nombre));
         }
         return nodo;
     }
 
-    // Busca una zona por nombre (case-insensitive)
-    public Zona buscarZona(String nombre) {
-        return buscarRec(raiz, nombre);
+    // Buscar zona por ID
+    public Zona buscarZonaPorId(int id) {
+        return buscarRec(raiz, id);
     }
 
-    private Zona buscarRec(Zona nodo, String nombre) {
+    private Zona buscarRec(Zona nodo, int id) {
         if (nodo == null) return null;
-        int cmp = nombre.compareToIgnoreCase(nodo.getNombre());
-        if (cmp == 0) return nodo;
-        if (cmp < 0) return buscarRec(nodo.getIzquierda(), nombre);
-        return buscarRec(nodo.getDerecha(), nombre);
+        if (id == nodo.getId()) return nodo;
+        if (id < nodo.getId()) return buscarRec(nodo.getIzquierda(), id);
+        return buscarRec(nodo.getDerecha(), id);
     }
 
-    // Agrega un conductor a una zona (crea la zona si no existe)
+    // Buscar zona por nombre (solo para conveniencia)
+    public Zona buscarZonaPorNombre(String nombre) {
+        return buscarPorNombreRec(raiz, nombre);
+    }
+
+    private Zona buscarPorNombreRec(Zona nodo, String nombre) {
+        if (nodo == null) return null;
+        if (nodo.getNombre().equalsIgnoreCase(nombre)) return nodo;
+        Zona izq = buscarPorNombreRec(nodo.getIzquierda(), nombre);
+        if (izq != null) return izq;
+        return buscarPorNombreRec(nodo.getDerecha(), nombre);
+    }
+
+    // Agrega un conductor a una zona existente (por ID)
     public void agregarConductorAZona(String nombreZona, Conductor conductor) {
-        Zona z = buscarZona(nombreZona);
+        Zona z = buscarZonaPorNombre(nombreZona);
         if (z == null) {
-            insertarZona(nombreZona);
-            z = buscarZona(nombreZona);
+            System.out.println("⚠ No existe zona con nombre " + nombreZona);
+            return;
         }
         z.agregarConductor(conductor);
-        System.out.println("✅ " + conductor.getNombre() + " agregado a zona " + nombreZona);
-        z.imprimirConductores();
+        System.out.println("✅ " + conductor.getNombre() + " agregado a zona " + z.getNombre());
     }
 
-    // Imprime zonas en orden
+    // Imprimir zonas en orden
     public void imprimirZonasInOrden() {
-        System.out.println("Zonas (in-order):");
+        System.out.println("Zonas (in-order por ID):");
         imprimirInOrden(raiz);
     }
 
     private void imprimirInOrden(Zona nodo) {
         if (nodo == null) return;
         imprimirInOrden(nodo.getIzquierda());
-        System.out.println("• " + nodo.getNombre());
+        System.out.println("• ID: " + nodo.getId() + " - " + nodo.getNombre());
         imprimirInOrden(nodo.getDerecha());
     }
 
@@ -76,7 +86,7 @@ public class GestorZonas {
         imprimirArbolRec(nodo.getDerecha());
     }
 
-    // 🔹 NUEVO MÉTODO: obtener lista de nombres de zonas
+    // Obtener lista de nombres (para el combo visual)
     public List<String> obtenerNombresZonas() {
         List<String> nombres = new ArrayList<>();
         recolectarNombres(raiz, nombres);

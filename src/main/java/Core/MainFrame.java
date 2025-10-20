@@ -10,21 +10,18 @@ import java.awt.*;
 public class MainFrame extends JFrame {
 
     private JPanel mainFrame;
+    private JPanel leftPanel; // Panel izquierdo que cambia entre menú y sidebar
     private JPanel selectedPanel;
     private SideNavigation sideNav;
+    private TripSidebarPanel tripSidebar;
     private mapaPanel panelMapa;
-    private TripInfoPanel tripPanel;
     private Sistema sistema;
 
-    // Paneles precargados
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
     private ConfiguracionPanel configuracionPanel;
     private PerfilPanel perfilPanel;
-
-    // Admin panel & stuff
     private AdminMenuPanel adminPanel;
-
 
     public MainFrame() {
         sistema = Sistema.getInstancia();
@@ -39,12 +36,20 @@ public class MainFrame extends JFrame {
         setResizable(false);
         setTitle("Sistema de Viajes");
 
-        mostrarPanel(dashboardPanel);
+        mostrarMenuYDashboard();
         setVisible(true);
     }
 
     private void initializePanels() {
-        panelMapa = new mapaPanel();
+        // Crear navegación lateral
+        sideNav = new SideNavigation();
+
+        // Crear sidebar de viaje
+        tripSidebar = new TripSidebarPanel();
+
+        // Crear mapa y pasarle referencia a MainFrame
+        panelMapa = new mapaPanel(this, tripSidebar);
+
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         configuracionPanel = new ConfiguracionPanel();
@@ -57,23 +62,22 @@ public class MainFrame extends JFrame {
         mainFrame.setBackground(Colors.SECONDARY);
 
         adminPanel.addVolverListener(e -> {
-            setContentPane(mainFrame);  // restaurar layout original
+            setContentPane(mainFrame);
             revalidate();
             repaint();
         });
 
-        // Top Bar
-        TopBar topBar = new TopBar("TravelApp", "Uaaaasuario");
+        TopBar topBar = new TopBar("TravelApp", "Usuario");
         topBar.addAdminButtonListener(e -> mostrarAdminMenu());
-        // Panel central
+
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(Colors.SECONDARY);
 
-        // Navegación lateral
-        sideNav = new SideNavigation();
-        centerPanel.add(sideNav, BorderLayout.WEST);
+        // Panel izquierdo dinámico (empieza con el menú)
+        leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(sideNav, BorderLayout.CENTER);
+        centerPanel.add(leftPanel, BorderLayout.WEST);
 
-        // Panel de contenido
         selectedPanel = new JPanel(new BorderLayout());
         selectedPanel.setBackground(Colors.SECONDARY);
         centerPanel.add(selectedPanel, BorderLayout.CENTER);
@@ -91,33 +95,73 @@ public class MainFrame extends JFrame {
         });
 
         sideNav.addHistorialListener(e -> {
-            mostrarPanel(historialPanel);
+            mostrarMenuYPanel(historialPanel);
             sideNav.setSelectedButton("historial");
         });
 
         sideNav.addConfiguracionListener(e -> {
-            mostrarPanel(configuracionPanel);
+            mostrarMenuYPanel(configuracionPanel);
             sideNav.setSelectedButton("configuracion");
         });
 
         sideNav.addPerfilListener(e -> {
-            mostrarPanel(perfilPanel);
+            mostrarMenuYPanel(perfilPanel);
             sideNav.setSelectedButton("perfil");
+        });
+
+        // Listener del sidebar de viaje
+        tripSidebar.addCancelarListener(e -> {
+            panelMapa.resetearMapa();
+            mostrarMenuYDashboard();
+        });
+
+        tripSidebar.addSolicitarListener(e -> {
+            panelMapa.confirmarViaje();
+            mostrarMenuYDashboard();
         });
     }
 
-    private void mostrarPanel(JPanel panel) {
+    private void mostrarMenuYPanel(JPanel panel) {
+        // Mostrar menú en la izquierda
+        leftPanel.removeAll();
+        leftPanel.add(sideNav, BorderLayout.CENTER);
+
+        // Mostrar panel en el centro
         selectedPanel.removeAll();
         selectedPanel.add(panel, BorderLayout.CENTER);
+
+        leftPanel.revalidate();
+        leftPanel.repaint();
         selectedPanel.revalidate();
         selectedPanel.repaint();
     }
 
+    public void mostrarMenuYDashboard() {
+        mostrarMenuYPanel(dashboardPanel);
+        sideNav.setSelectedButton("solicitar"); // Reset selección
+    }
+
     public void mostrarMapa() {
+        // Mostrar menú en la izquierda
+        leftPanel.removeAll();
+        leftPanel.add(sideNav, BorderLayout.CENTER);
+
+        // Mostrar mapa en el centro
         selectedPanel.removeAll();
         selectedPanel.add(panelMapa.getRootPanel(), BorderLayout.CENTER);
+
+        leftPanel.revalidate();
+        leftPanel.repaint();
         selectedPanel.revalidate();
         selectedPanel.repaint();
+    }
+
+    public void mostrarSidebarDeViaje() {
+        // Reemplazar menú por sidebar de viaje
+        leftPanel.removeAll();
+        leftPanel.add(tripSidebar, BorderLayout.CENTER);
+        leftPanel.revalidate();
+        leftPanel.repaint();
     }
 
     public void mostrarAdminMenu() {

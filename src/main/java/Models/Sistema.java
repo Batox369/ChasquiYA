@@ -21,9 +21,9 @@ public class Sistema {
     }
 
     private void inicializarDatosBase() {
-        gestorZonas.insertarZona("Centro");
-        gestorZonas.insertarZona("Norte");
-        gestorZonas.insertarZona("Sur");
+        gestorZonas.insertarZona(1, "Centro");
+        gestorZonas.insertarZona(3, "Norte");
+        gestorZonas.insertarZona(5, "Sur");
     }
     public java.util.List<String> obtenerNombresZonas() {
         return gestorZonas.obtenerNombresZonas();

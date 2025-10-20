@@ -3,19 +3,18 @@ package Panels;
 import Components.*;
 import Models.*;
 import Constants.Colors;
+import Core.MainFrame;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
-import java.util.ArrayList;
 
 public class mapaPanel {
     private JPanel rootPanel;
     private JPanel mapaCanvas;
     private JPanel controlsPanel;
-    private TripInfoPanel tripInfoPanel;
 
     private BufferedImage imagen;
     private double zoom = 1.0;
@@ -27,13 +26,17 @@ public class mapaPanel {
     private static final double MAX_ZOOM = 5.0;
     private static final double ZOOM_FACTOR = 1.1;
 
-    // Sistema de marcadores y viaje
     private MapMarker markerOrigen;
     private MapMarker markerDestino;
     private Viaje viajeActual;
     private boolean isDragging = false;
 
-    public mapaPanel() {
+    private MainFrame mainFrame;
+    private TripSidebarPanel tripSidebar;
+
+    public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar) {
+        this.mainFrame = mainFrame;
+        this.tripSidebar = tripSidebar;
         loadImage();
         initComponents();
         setupListeners();
@@ -61,7 +64,6 @@ public class mapaPanel {
         rootPanel.setBackground(Colors.SECONDARY);
         rootPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Canvas del mapa
         mapaCanvas = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
@@ -73,27 +75,10 @@ public class mapaPanel {
         mapaCanvas.setBorder(null);
         mapaCanvas.setCursor(new Cursor(Cursor.MOVE_CURSOR));
 
-        // Panel de controles
         createControlsPanel();
 
-        // Panel de información del viaje (inicialmente oculto)
-        tripInfoPanel = new TripInfoPanel();
-        tripInfoPanel.setVisible(false);
-        tripInfoPanel.addSolicitarListener(e -> solicitarViaje());
-        tripInfoPanel.addCancelarListener(e -> cancelarSeleccion());
-
-        // Contenedor para mapa e info
-        JPanel mapContainer = new JPanel(new BorderLayout());
-        mapContainer.setOpaque(false);
-        mapContainer.add(mapaCanvas, BorderLayout.CENTER);
-
-        JPanel topInfo = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        topInfo.setOpaque(false);
-        topInfo.add(tripInfoPanel);
-        mapContainer.add(topInfo, BorderLayout.NORTH);
-
-        rootPanel.add(mapContainer, BorderLayout.CENTER);
-        rootPanel.add(controlsPanel, BorderLayout.SOUTH);
+        rootPanel.add(controlsPanel, BorderLayout.NORTH);
+        rootPanel.add(mapaCanvas, BorderLayout.CENTER);
     }
 
     private void createControlsPanel() {
@@ -157,7 +142,6 @@ public class mapaPanel {
 
             @Override
             public void mouseReleased(MouseEvent e) {
-                // Solo registrar click si no hubo arrastre
                 if (!isDragging && e.getButton() == MouseEvent.BUTTON1) {
                     handleMapClick(e.getPoint());
                 }
@@ -201,48 +185,55 @@ public class mapaPanel {
         Coordenada coordenada = new Coordenada(clickPoint, zoom, offsetX, offsetY);
 
         if (markerOrigen == null) {
-            // Primer click: establecer origen
             markerOrigen = new MapMarker(coordenada, "origen");
             markerDestino = null;
             viajeActual = null;
-            tripInfoPanel.setVisible(false);
         } else if (markerDestino == null) {
-            // Segundo click: establecer destino
             markerDestino = new MapMarker(coordenada, "destino");
             viajeActual = new Viaje(markerOrigen.getCoordenada(),
                     markerDestino.getCoordenada());
-            tripInfoPanel.actualizarViaje(viajeActual);
-            tripInfoPanel.setVisible(true);
+
+            if (viajeActual.getDistanciaMetros() < 100) {
+                JOptionPane.showMessageDialog(rootPanel,
+                        "La distancia mínima es de 100 metros.",
+                        "Distancia muy corta",
+                        JOptionPane.WARNING_MESSAGE);
+                markerDestino = null;
+                viajeActual = null;
+                mapaCanvas.repaint();
+                return;
+            }
+
+            // Actualizar sidebar y mostrarlo
+            tripSidebar.actualizarViaje(viajeActual);
+            mainFrame.mostrarSidebarDeViaje();
         } else {
-            // Tercer click: reiniciar desde el origen
             markerOrigen = new MapMarker(coordenada, "origen");
             markerDestino = null;
             viajeActual = null;
-            tripInfoPanel.setVisible(false);
+            tripSidebar.setEstadoSinViaje();
         }
 
         mapaCanvas.repaint();
     }
 
-    private void solicitarViaje() {
+    public void confirmarViaje() {
         if (viajeActual != null) {
             JOptionPane.showMessageDialog(rootPanel,
-                    "¡Viaje solicitado!\n\n" +
+                    "¡Viaje solicitado exitosamente!\n\n" +
                             "Distancia: " + viajeActual.getDistanciaFormateada() + "\n" +
-                            "Un conductor ha sido asignado.",
+                            "Un conductor será asignado pronto.",
                     "Viaje Confirmado",
                     JOptionPane.INFORMATION_MESSAGE);
-
-            // Resetear para nuevo viaje
-            cancelarSeleccion();
+            resetearMapa();
         }
     }
 
-    private void cancelarSeleccion() {
+    public void resetearMapa() {
         markerOrigen = null;
         markerDestino = null;
         viajeActual = null;
-        tripInfoPanel.setVisible(false);
+        tripSidebar.setEstadoSinViaje();
         mapaCanvas.repaint();
     }
 
@@ -259,11 +250,9 @@ public class mapaPanel {
         g2d.scale(zoom, zoom);
         g2d.drawImage(imagen, 0, 0, null);
 
-        // Resetear transformación para dibujar marcadores
         g2d.scale(1/zoom, 1/zoom);
         g2d.translate(-offsetX, -offsetY);
 
-        // Dibujar ruta si hay origen y destino
         if (markerOrigen != null && markerDestino != null) {
             RouteRenderer.drawRoute(g2d,
                     markerOrigen.getCoordenada(),
@@ -271,7 +260,6 @@ public class mapaPanel {
                     zoom, offsetX, offsetY);
         }
 
-        // Dibujar marcadores
         if (markerOrigen != null) {
             markerOrigen.draw(g2d, zoom, offsetX, offsetY);
         }
