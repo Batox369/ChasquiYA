@@ -22,14 +22,14 @@ public class TopBar extends JPanel {
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 15, 0));
         leftPanel.setOpaque(false);
 
-        JLabel logoLabel = new JLabel("🚗");
-        logoLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 32));
+        //JLabel logoLabel = new JLabel("🚗");
+        //logoLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
 
         JLabel titleLabel = new JLabel(appName);
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 24));
         titleLabel.setForeground(Colors.PRIMARY);
 
-        leftPanel.add(logoLabel);
+        //leftPanel.add(logoLabel);
         leftPanel.add(titleLabel);
 
         // Panel derecho con usuario
@@ -44,7 +44,7 @@ public class TopBar extends JPanel {
         userButton.setBorderPainted(false);
         userButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
-        JLabel avatarLabel = new JLabel("👤");
+        JLabel avatarLabel = new JLabel("");
         avatarLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 24));
         avatarLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 0));
 

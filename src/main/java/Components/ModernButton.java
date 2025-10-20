@@ -55,5 +55,6 @@ public class ModernButton extends JButton {
             setBackground(Colors.CARD_BG);
             setForeground(Colors.TEXT_PRIMARY);
         }
+
     }
 }

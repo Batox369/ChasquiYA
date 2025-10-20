@@ -67,7 +67,7 @@ public class MainFrame extends JFrame {
             repaint();
         });
 
-        TopBar topBar = new TopBar("TravelApp", "Usuario");
+        TopBar topBar = new TopBar("ChasquiYa", "Usuario");
         topBar.addAdminButtonListener(e -> mostrarAdminMenu());
 
         JPanel centerPanel = new JPanel(new BorderLayout());
