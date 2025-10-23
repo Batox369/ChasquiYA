@@ -5,35 +5,43 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class ConexionBD {
-    // 1. Define los datos de tu conexión (¡Cámbialos por los tuyos!)
-    private static final String URL = "jdbc:mysql://localhost:3306/chasquiya_db"; // Asegúrate que la BD exista
-    private static final String USER = "root";
-    private static final String PASSWORD = "tu_contraseña_secreta"; // Cambia esto
+// 1. ¡ACTUALIZA ESTOS 4 DATOS CON LOS DE VULTAM!
 
-    // 2. Variable para guardar la única instancia (Patrón Singleton)
+    // Pega aquí el "ENDPOINT" que te dio Vultam (Ej: b1.vultam.com:25060)
+    private static final String HOST_CON_PUERTO = "104.243.38.185:3306";
+
+    // Pega aquí el "DATABASE NAME" (s16555_chasquiya_db)
+    private static final String DATABASE_NAME = "s16555_chasquiya_db";
+
+    // Pega aquí el "USERNAME" que te dio Vultam
+    private static final String USER = "u16555_Jvpf5iKdYP";
+
+    // Pega aquí la CONTRASEÑA que obtienes al presionar el ícono (👁️)
+    private static final String PASSWORD = "6wHA.h@zYvH9j^qzp8rhF7Sw";
+
+    // --- Esta línea construye la URL de conexión ---
+    private static final String URL = "jdbc:mysql://" + HOST_CON_PUERTO + "/" + DATABASE_NAME;
+
+
+    // --- El resto de la clase es igual ---
+
     private static ConexionBD instance;
-
-    // 3. La conexión en sí
     private Connection connection;
 
-    // 4. Constructor privado para evitar que se creen nuevas instancias
     private ConexionBD() {
         try {
-            // Cargamos el driver
             Class.forName("com.mysql.cj.jdbc.Driver");
-            // Creamos la conexión
             this.connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("✅ Conexión a la BD exitosa.");
+            System.out.println("✅ Conexión a la BD de Vultam (" + DATABASE_NAME + ") exitosa.");
         } catch (ClassNotFoundException e) {
-            System.err.println("Error: Driver JDBC no encontrado.");
+            System.err.println("Error: Driver JDBC no encontrado. (¿Falta en pom.xml?)");
             e.printStackTrace();
         } catch (SQLException e) {
-            System.err.println("Error al conectar a la base de datos.");
+            System.err.println("Error al conectar a la base de datos de Vultam.");
             e.printStackTrace();
         }
     }
 
-    // 5. Método público para obtener la instancia (Singleton)
     public static synchronized ConexionBD getInstance() {
         if (instance == null) {
             instance = new ConexionBD();
@@ -41,12 +49,10 @@ public class ConexionBD {
         return instance;
     }
 
-    // 6. Método para obtener la conexión y poder usarla
     public Connection getConnection() {
         return connection;
     }
 
-    // (Opcional) Método para cerrar la conexión al final del programa
     public void closeConnection() {
         try {
             if (connection != null && !connection.isClosed()) {
