@@ -75,4 +75,26 @@ public class MySQLGrafoRepository implements GrafoRepository {
             return false;
         }
     }
+
+    @Override
+    public boolean addConexion(int idZonaA, int idZonaB, double peso) {
+        // Inserta la conexión en ambos sentidos para grafo no dirigido
+        String sql = "INSERT INTO zona_adyacencia (zona_origen_id, zona_destino_id, peso) VALUES (?, ?, ?), (?, ?, ?)";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            // Conexión A -> B
+            ps.setInt(1, idZonaA);
+            ps.setInt(2, idZonaB);
+            ps.setDouble(3, peso);
+            // Conexión B -> A
+            ps.setInt(4, idZonaB);
+            ps.setInt(5, idZonaA);
+            ps.setDouble(6, peso);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

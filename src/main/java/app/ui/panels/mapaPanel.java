@@ -213,6 +213,11 @@ public class mapaPanel {
         double mundoX = (clickPoint.x - offsetX) / zoom;
         double mundoY = (clickPoint.y - offsetY) / zoom;
 
+        if (mainFrame.getmodoColocarZona()) { // <-- Acceso directo (puede necesitar ajuste de visibilidad)
+            mainFrame.onZonaColocada(mundoX, mundoY); // Llama al MainFrame con las coords
+            return; // Termina aquí, no selecciones origen/destino
+        }
+
         // 2. Buscar la zona más cercana a esa coordenada de IMAGEN
         Zona zonaClic = buscarZonaCercana(mundoX, mundoY);
 
@@ -233,10 +238,11 @@ public class mapaPanel {
                 zonaDestino = null; // No se puede viajar a la misma zona
                 return;
             }
+            System.out.println("Calculando ruta desde: " + zonaOrigen.getNombre() + " (ID: " + zonaOrigen.getId() + ") hasta: " + zonaDestino.getNombre() + " (ID: " + zonaDestino.getId() + ")");
 
             // 5. Calcular ruta usando el Gestor
             rutaActual = gestorRutas.calcularRutaMasCorta(grafoZonas, zonaOrigen, zonaDestino);
-
+            System.out.println("Ruta calculada: " + (rutaActual == null ? "NULL" : rutaActual.size() + " zonas"));
             if (rutaActual == null) {
                 JOptionPane.showMessageDialog(rootPanel,
                         "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
@@ -341,7 +347,7 @@ public class mapaPanel {
                 ZonaRenderer.drawZona(g2d, zona, seleccionada);
             }
         }
-
+        System.out.println("Intentando dibujar ruta: " + (rutaActual == null ? "NO hay ruta" : "SI hay ruta (" + rutaActual.size() + " zonas)"));
         // 3B. Dibujar Ruta Calculada
         if (rutaActual != null) {
             RouteRenderer.drawRuta(g2d, rutaActual, zoom);

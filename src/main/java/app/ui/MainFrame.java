@@ -2,6 +2,7 @@ package app.ui;
 
 import app.domain.model.GrafoZonas;
 import app.domain.repository.ZonaRepository;
+import app.domain.service.GestorGrafos;
 import app.domain.service.GestorRutas;
 import app.infrastructure.persistence.ConexionBD;
 import app.ui.panels.*;
@@ -36,13 +37,14 @@ public class MainFrame extends JFrame {
     private PerfilPanel perfilPanel;
     private AdminMenuPanel adminPanel;
 
+    private boolean modoColocarZona = false; // <-- NUEVA VARIABLE DE ESTADO
+    private AdminMenuPanel panelAdminOrigen;
+
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private JPanel welcomePanel;
 
     ZonaRepository repo = new ZonaRepository(ConexionBD.getInstance().getConnection());
-    GrafoZonas grafoZonas = repo.cargarGrafo(714, 536);
-    GestorRutas gestorRutas = new GestorRutas();
 
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -51,6 +53,7 @@ public class MainFrame extends JFrame {
         setResizable(false);
         setTitle("Sistema de Viajes");
 
+        sistema = Sistema.getInstancia();
         initializeLayout();
 
         String savedUsername = SessionManager.getSavedUsername();
@@ -88,6 +91,7 @@ public class MainFrame extends JFrame {
         centerPanel.add(selectedPanel, BorderLayout.CENTER);
         mainFrame.add(centerPanel, BorderLayout.CENTER);
         setContentPane(mainFrame);
+        adminPanel = new AdminMenuPanel(sistema, this);
     }
 
     private void showGuestView(JPanel guestPanel) {
@@ -150,15 +154,50 @@ public class MainFrame extends JFrame {
         repaint();
     }
 
+    public void activarModoColocarZona(AdminMenuPanel panelOrigen) {
+        this.modoColocarZona = true;
+        this.panelAdminOrigen = panelOrigen;
+        mostrarMapa(); // Muestra el mapa
+        JOptionPane.showMessageDialog(this, "Haz clic en el mapa para seleccionar la ubicación de la nueva zona.", "Modo Colocar Zona", JOptionPane.INFORMATION_MESSAGE);
+        // Cambiar cursor o indicar visualmente el modo
+        panelMapa.getRootPanel().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+    }
+
+    public void onZonaColocada(double x, double y) {
+        if (!modoColocarZona || panelAdminOrigen == null) return;
+
+        // Llama de vuelta al AdminPanel para que guarde
+        panelAdminOrigen.onUbicacionSeleccionada(x, y);
+
+        // Salir del modo
+        this.modoColocarZona = false;
+        this.panelAdminOrigen = null;
+        panelMapa.getRootPanel().setCursor(Cursor.getDefaultCursor());
+
+        // Volver al panel de Admin
+        mostrarAdminMenu();
+    }
+
     private void initializePanels() {
         sideNav = new SideNavigation();
         tripSidebar = new TripSidebarPanel();
-        panelMapa = new mapaPanel(this, tripSidebar, grafoZonas, gestorRutas);
+
+        // --- ¡AQUÍ ESTÁ LA FORMA CORRECTA! ---
+        // 1. Obtén el grafo desde el Singleton GestorGrafos
+        GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo();
+
+        // 2. Crea una instancia del GestorRutas
+        GestorRutas rutas = new GestorRutas();
+
+        // 3. Pasa las instancias correctas al constructor de mapaPanel
+        panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas);
+        // ------
+
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         configuracionPanel = new ConfiguracionPanel();
         perfilPanel = new PerfilPanel(this);
-        adminPanel = new AdminMenuPanel(sistema);
+        adminPanel = new AdminMenuPanel(sistema, this);
     }
 
     private void setupListeners() {
@@ -233,5 +272,16 @@ public class MainFrame extends JFrame {
         setContentPane(adminPanel);
         revalidate();
         repaint();
+    }
+
+    public boolean getmodoColocarZona(){
+        return modoColocarZona;
+    }
+
+    public JPanel getMapaPanel() {
+        if (selectedPanel == null) {
+            System.err.println("Advertencia: Se llamó a getMapaPanel() antes de inicializar panelMapa.");
+        }
+        return selectedPanel;
     }
 }
