@@ -7,6 +7,12 @@ public class Coordenada {
     private double x; // Coordenada real en el mapa
     private double y; // Coordenada real en el mapa
 
+    public Coordenada(double x, double y) {
+        this.x = x;
+        this.y = y;
+        this.punto = new Point((int) x, (int) y);
+    }
+
     public Coordenada(Point punto, double zoom, int offsetX, int offsetY) {
         this.punto = punto;
         // Convertir coordenadas de pantalla a coordenadas del mapa

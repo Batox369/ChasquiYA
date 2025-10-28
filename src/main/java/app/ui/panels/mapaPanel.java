@@ -2,9 +2,10 @@ package app.ui.panels;
 
 import app.domain.model.Coordenada;
 import app.domain.model.Viaje;
+import app.domain.service.GestorRutas;
 import app.ui.components.MapMarker;
 import app.ui.components.RouteRenderer;
-import app.ui.components.*;
+import app.ui.components.ZonaRenderer; // Importa el renderer
 import app.domain.model.*;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.MainFrame;
@@ -40,14 +41,23 @@ public class mapaPanel {
     private MainFrame mainFrame;
     private TripSidebarPanel tripSidebar;
 
-    public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar) {
+    private GrafoZonas grafoZonas;
+    private GestorRutas gestorRutas;
+    private Zona zonaOrigen;
+    private Zona zonaDestino;
+    private java.util.List<Zona> rutaActual;
+
+    public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas) {
         this.mainFrame = mainFrame;
         this.tripSidebar = tripSidebar;
+        this.grafoZonas = grafoZonas; // Grafo cargado desde ZonaRepository
+        this.gestorRutas = gestorRutas;
+
         loadImage();
         initComponents();
         setupListeners();
 
-        // Ahora, ejecutamos el centrado solo cuando el panel esté realmente visible
+        // (Tu código de HierarchyListener para centrar el mapa está perfecto)
         rootPanel.addHierarchyListener(e -> {
             if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && rootPanel.isShowing()) {
                 SwingUtilities.invokeLater(() -> {
@@ -198,40 +208,94 @@ public class mapaPanel {
     }
 
     private void handleMapClick(Point clickPoint) {
-        Coordenada coordenada = new Coordenada(clickPoint, zoom, offsetX, offsetY);
+        // 1. Convertir clic de Pantalla -> a Coordenada de Imagen/Mundo
+        // (Invierte el zoom y el pan/offset)
+        double mundoX = (clickPoint.x - offsetX) / zoom;
+        double mundoY = (clickPoint.y - offsetY) / zoom;
 
-        if (markerOrigen == null) {
-            markerOrigen = new MapMarker(coordenada, "origen");
-            markerDestino = null;
-            viajeActual = null;
-        } else if (markerDestino == null) {
-            markerDestino = new MapMarker(coordenada, "destino");
-            viajeActual = new Viaje(markerOrigen.getCoordenada(),
-                    markerDestino.getCoordenada());
+        // 2. Buscar la zona más cercana a esa coordenada de IMAGEN
+        Zona zonaClic = buscarZonaCercana(mundoX, mundoY);
 
-            if (viajeActual.getDistanciaMetros() < 100) {
-                JOptionPane.showMessageDialog(rootPanel,
-                        "La distancia mínima es de 100 metros.",
-                        "Distancia muy corta",
-                        JOptionPane.WARNING_MESSAGE);
-                markerDestino = null;
-                viajeActual = null;
-                mapaCanvas.repaint();
+        if (zonaClic == null) return; // Clic en un lugar vacío
+
+        if (zonaOrigen == null) {
+            // 3. Primer clic: Selecciona Origen
+            zonaOrigen = zonaClic;
+            zonaDestino = null;
+            rutaActual = null;
+            tripSidebar.setEstadoSinViaje();
+
+        } else if (zonaDestino == null) {
+            // 4. Segundo clic: Selecciona Destino
+            zonaDestino = zonaClic;
+
+            if (zonaOrigen.getId() == zonaDestino.getId()) {
+                zonaDestino = null; // No se puede viajar a la misma zona
                 return;
             }
 
-            // Actualizar sidebar y mostrarlo
+            // 5. Calcular ruta usando el Gestor
+            rutaActual = gestorRutas.calcularRutaMasCorta(grafoZonas, zonaOrigen, zonaDestino);
+
+            if (rutaActual == null) {
+                JOptionPane.showMessageDialog(rootPanel,
+                        "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
+                        "Ruta no encontrada",
+                        JOptionPane.ERROR_MESSAGE);
+                zonaDestino = null;
+                return;
+            }
+
+            viajeActual = new Viaje(
+                    new Coordenada(zonaOrigen.getLongitud(), zonaOrigen.getLatitud()), // Coordenada X, Y del origen
+                    new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()) // Coordenada X, Y del destino
+            );
+            viajeActual.setRutaZonas(rutaActual); // Guardamos la ruta de nodos
+
             tripSidebar.actualizarViaje(viajeActual);
             mainFrame.mostrarSidebarDeViaje();
         } else {
-            markerOrigen = new MapMarker(coordenada, "origen");
-            markerDestino = null;
-            viajeActual = null;
+            // 7. Tercer clic: Reinicia (selecciona nuevo origen)
+            zonaOrigen = zonaClic;
+            zonaDestino = null;
+            rutaActual = null;
             tripSidebar.setEstadoSinViaje();
         }
 
         mapaCanvas.repaint();
     }
+
+    private Zona buscarZonaCercana(double mundoX, double mundoY) {
+        Zona masCercana = null;
+        double minDistancia = Double.MAX_VALUE;
+
+        // (Este umbral de 30px es en píxeles de pantalla,
+        //  así que lo escalamos por el zoom)
+        double umbral = 80 / zoom;
+
+        for (Zona zona : grafoZonas.getZonas()) {
+            // Comparamos las coordenadas del "mundo"
+            double zonaX = zona.getLongitud(); // Asumiendo X
+            double zonaY = zona.getLatitud();  // Asumiendo Y
+
+            double dx = mundoX - zonaX;
+            double dy = mundoY - zonaY;
+            double distancia = Math.sqrt(dx*dx + dy*dy); // Distancia en píxeles de imagen
+
+            if (distancia < minDistancia) {
+                minDistancia = distancia;
+                masCercana = zona;
+            }
+        }
+
+        // Si el clic está dentro del umbral de la zona más cercana
+        if (minDistancia < umbral) {
+            return masCercana;
+        }
+
+        return null; // El clic fue muy lejos de cualquier zona
+    }
+
 
     public void confirmarViaje() {
         if (viajeActual != null) {
@@ -256,33 +320,36 @@ public class mapaPanel {
     private void drawMap(Graphics g) {
         if (imagen == null) return;
 
-        Graphics2D g2d = (Graphics2D) g;
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        Graphics2D g2d = (Graphics2D) g.create();
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
+        // --- 1. APLICAR TRANSFORMACIÓN (PAN/ZOOM) ---
+        // Todo lo que dibujemos DESPUÉS de esto será en el "mundo" de la imagen
         g2d.translate(offsetX, offsetY);
         g2d.scale(zoom, zoom);
+
+        // --- 2. DIBUJAR IMAGEN DE FONDO ---
         g2d.drawImage(imagen, 0, 0, null);
 
-        g2d.scale(1/zoom, 1/zoom);
-        g2d.translate(-offsetX, -offsetY);
+        // --- 3. DIBUJAR EL GRAFO (RUTAS Y ZONAS) ---
 
-        if (markerOrigen != null && markerDestino != null) {
-            RouteRenderer.drawRoute(g2d,
-                    markerOrigen.getCoordenada(),
-                    markerDestino.getCoordenada(),
-                    zoom, offsetX, offsetY);
+        // 3A. Dibujar Zonas (Nodos)
+        if (grafoZonas != null) {
+            for (Zona zona : grafoZonas.getZonas()) {
+                boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
+                // Llamamos al "Smart" Renderer
+                ZonaRenderer.drawZona(g2d, zona, seleccionada);
+            }
         }
 
-        if (markerOrigen != null) {
-            markerOrigen.draw(g2d, zoom, offsetX, offsetY);
+        // 3B. Dibujar Ruta Calculada
+        if (rutaActual != null) {
+            RouteRenderer.drawRuta(g2d, rutaActual, zoom);
         }
-        if (markerDestino != null) {
-            markerDestino.draw(g2d, zoom, offsetX, offsetY);
-        }
+
+        g2d.dispose();
     }
+
 
     private void zoomIn() {
         Point center = new Point(mapaCanvas.getWidth() / 2, mapaCanvas.getHeight() / 2);

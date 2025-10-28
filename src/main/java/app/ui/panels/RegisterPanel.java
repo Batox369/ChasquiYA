@@ -43,7 +43,7 @@ public class RegisterPanel extends JPanel {
         gbc.insets = new Insets(15, 15, 5, 15);
 
         gbc.gridy = 1;
-        add(new JLabel("Nombre Completo:"), gbc);
+        add(new JLabel("Nombre:"), gbc);
         gbc.gridy = 2;
         gbc.insets = new Insets(0, 15, 10, 15);
         txtNombreCompleto = new JTextField(20);
@@ -51,7 +51,7 @@ public class RegisterPanel extends JPanel {
 
         gbc.gridy = 3;
         gbc.insets = new Insets(10, 15, 5, 15);
-        add(new JLabel("Usuario (email):"), gbc);
+        add(new JLabel("Usuario:"), gbc);
         gbc.gridy = 4;
         gbc.insets = new Insets(0, 15, 10, 15);
         txtUsuario = new JTextField(20);

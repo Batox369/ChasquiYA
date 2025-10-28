@@ -1,12 +1,16 @@
 package app.infrastructure.persistence;
 
+import app.domain.model.Arista;
 import app.domain.model.Usuario;
+import app.domain.model.Zona;
 import app.domain.repository.UsuarioRepository;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MySQLUsuarioRepository implements UsuarioRepository {
 

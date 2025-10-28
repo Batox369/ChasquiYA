@@ -1,5 +1,9 @@
 package app.ui;
 
+import app.domain.model.GrafoZonas;
+import app.domain.repository.ZonaRepository;
+import app.domain.service.GestorRutas;
+import app.infrastructure.persistence.ConexionBD;
 import app.ui.panels.*;
 import app.infrastructure.shared.constants.Colors;
 import app.domain.service.Sistema;
@@ -35,6 +39,10 @@ public class MainFrame extends JFrame {
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private JPanel welcomePanel;
+
+    ZonaRepository repo = new ZonaRepository(ConexionBD.getInstance().getConnection());
+    GrafoZonas grafoZonas = repo.cargarGrafo(714, 536);
+    GestorRutas gestorRutas = new GestorRutas();
 
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -145,7 +153,7 @@ public class MainFrame extends JFrame {
     private void initializePanels() {
         sideNav = new SideNavigation();
         tripSidebar = new TripSidebarPanel();
-        panelMapa = new mapaPanel(this, tripSidebar);
+        panelMapa = new mapaPanel(this, tripSidebar, grafoZonas, gestorRutas);
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         configuracionPanel = new ConfiguracionPanel();
@@ -172,12 +180,12 @@ public class MainFrame extends JFrame {
         });
         tripSidebar.addCancelarListener(e -> {
             panelMapa.resetearMapa();
-            mostrarDashboard();
+            mostrarMapa();
             sideNav.setSelectedButton("solicitar");
         });
         tripSidebar.addSolicitarListener(e -> {
             panelMapa.confirmarViaje();
-            mostrarDashboard();
+            mostrarMapa();
             sideNav.setSelectedButton("solicitar");
         });
     }

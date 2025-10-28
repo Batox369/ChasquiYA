@@ -5,17 +5,34 @@ import app.ui.components.ModernActionButton;
 import app.ui.components.InputField;
 import app.ui.components.ZoneSelector;
 import app.ui.components.PrimaryButton;
+import app.domain.repository.GrafoRepository; // Importar Repositorio
+import app.infrastructure.persistence.MySQLGrafoRepository; // Importar Implementación
+import app.domain.service.GestorGrafos; // Importar GestorGrafo (para recargar)
 import app.domain.service.Sistema;
+import app.ui.MainFrame; // Importar MainFrame
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class AdminMenuPanel extends JPanel {
+    // --- Componentes Comunes ---
     private final ModernActionButton btnVolver;
-    private final InputField nombreField;
-    private final ZoneSelector zoneSelector;
-    private final PrimaryButton btnAgregar;
+    private final MainFrame mainFrame; // Referencia al MainFrame
+
+    // --- Componentes Pestaña Conductores ---
+    private final InputField conductorNombreField;
+    private final ZoneSelector conductorZoneSelector;
+    private final PrimaryButton btnAgregarConductor;
+    private final Sistema sistema; // Ya lo tenías
+
+    // --- Componentes Pestaña Zonas ---
+    private final InputField zonaNombreField;
+    private final PrimaryButton btnSeleccionarUbicacion;
+    private JLabel lblCoordsSeleccionadas; // Para mostrar X, Y
+
+    // --- Variables para guardar temporalmente ---
+    private String nombreZonaPendiente = null;
 
     public AdminMenuPanel(Sistema sistema) {
         setLayout(new BorderLayout(20, 20));
