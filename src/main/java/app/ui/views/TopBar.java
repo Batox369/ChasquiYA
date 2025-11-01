@@ -67,7 +67,7 @@ public class TopBar extends JPanel {
         }
 
         if (userLabel != null) {
-            userLabel.setText("👤  " + name);
+            userLabel.setText("👤  Hola " + name);
         }
     }
 }
