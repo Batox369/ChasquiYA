@@ -209,29 +209,30 @@ public class mapaPanel {
 
     private void handleMapClick(Point clickPoint) {
         // 1. Convertir clic de Pantalla -> a Coordenada de Imagen/Mundo
-        // (Invierte el zoom y el pan/offset)
         double mundoX = (clickPoint.x - offsetX) / zoom;
         double mundoY = (clickPoint.y - offsetY) / zoom;
 
-        if (mainFrame.getmodoColocarZona()) { // <-- Acceso directo (puede necesitar ajuste de visibilidad)
+        // 2. Revisa si estamos en "Modo Colocar Zona"
+        // (Corregí el nombre del método a la convención Java: getModoColocarZona)
+        if (mainFrame.getmodoColocarZona()) {
             mainFrame.onZonaColocada(mundoX, mundoY); // Llama al MainFrame con las coords
             return; // Termina aquí, no selecciones origen/destino
         }
 
-        // 2. Buscar la zona más cercana a esa coordenada de IMAGEN
+        // 3. Buscar la zona más cercana a esa coordenada de IMAGEN
         Zona zonaClic = buscarZonaCercana(mundoX, mundoY);
 
         if (zonaClic == null) return; // Clic en un lugar vacío
 
         if (zonaOrigen == null) {
-            // 3. Primer clic: Selecciona Origen
+            // 4. Primer clic: Selecciona Origen
             zonaOrigen = zonaClic;
             zonaDestino = null;
             rutaActual = null;
             tripSidebar.setEstadoSinViaje();
 
         } else if (zonaDestino == null) {
-            // 4. Segundo clic: Selecciona Destino
+            // 5. Segundo clic: Selecciona Destino
             zonaDestino = zonaClic;
 
             if (zonaOrigen.getId() == zonaDestino.getId()) {
@@ -240,26 +241,48 @@ public class mapaPanel {
             }
             System.out.println("Calculando ruta desde: " + zonaOrigen.getNombre() + " (ID: " + zonaOrigen.getId() + ") hasta: " + zonaDestino.getNombre() + " (ID: " + zonaDestino.getId() + ")");
 
-            // 5. Calcular ruta usando el Gestor
+            // 6. Calcular la RUTA (la lista de zonas)
             rutaActual = gestorRutas.calcularRutaMasCorta(grafoZonas, zonaOrigen, zonaDestino);
             System.out.println("Ruta calculada: " + (rutaActual == null ? "NULL" : rutaActual.size() + " zonas"));
-            if (rutaActual == null) {
+
+            // 7. Validar la ruta (una ruta válida debe tener al menos 2 zonas)
+            if (rutaActual == null || rutaActual.size() < 2) {
                 JOptionPane.showMessageDialog(rootPanel,
                         "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
                         "Ruta no encontrada",
                         JOptionPane.ERROR_MESSAGE);
-                zonaDestino = null;
+                // ¡ARREGLO! Si la ruta falla, reseteamos AMBAS zonas para no quedarnos atascados.
+                zonaOrigen = null;  // <-- AÑADIR ESTA LÍNEA
+                zonaDestino = null; // Esta línea ya estaba, la dejamos.
+                rutaActual = null; // Limpia la ruta fallida
                 return;
             }
 
+            // --- ¡ARREGLO PRINCIPAL! ---
+            // 8. Calcular la DISTANCIA total de la ruta del grafo
+            double distanciaTotalRuta = 0.0;
+            for (int i = 0; i < rutaActual.size() - 1; i++) {
+                Zona a = rutaActual.get(i);
+                Zona b = rutaActual.get(i + 1);
+                // Llama al método de GrafoZonas que suma los pesos
+                distanciaTotalRuta += grafoZonas.getDistanciaEntre(a, b);
+            }
+
+            // 9. Crear el Viaje (con el constructor simple)
             viajeActual = new Viaje(
                     new Coordenada(zonaOrigen.getLongitud(), zonaOrigen.getLatitud()), // Coordenada X, Y del origen
                     new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()) // Coordenada X, Y del destino
             );
-            viajeActual.setRutaZonas(rutaActual); // Guardamos la ruta de nodos
 
+            // 10. Establecer la ruta y la distancia CALCULADA
+            viajeActual.setRutaZonas(rutaActual);
+            // (Asumiendo tu factor de conversión de 1 peso = 10 metros, como en tu clase Viaje)
+            viajeActual.setDistanciaMetros(distanciaTotalRuta * 10);
+
+            // 11. Actualizar la UI
             tripSidebar.actualizarViaje(viajeActual);
             mainFrame.mostrarSidebarDeViaje();
+
         } else {
             // 7. Tercer clic: Reinicia (selecciona nuevo origen)
             zonaOrigen = zonaClic;
@@ -441,5 +464,11 @@ public class mapaPanel {
 
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    public void actualizarGrafo(GrafoZonas nuevoGrafo) {
+        this.grafoZonas = nuevoGrafo;
+        resetearMapa(); // Limpia selecciones y repinta el canvas
+        System.out.println("mapaPanel: Grafo actualizado y mapa repintado.");
     }
 }

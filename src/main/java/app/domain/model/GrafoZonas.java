@@ -36,4 +36,15 @@ public class GrafoZonas {
             this.distancia = distancia;
         }
     }
+
+    public double getDistanciaEntre(Zona a, Zona b) {
+        if (adyacencias.containsKey(a)) {
+            for (Conexion con : adyacencias.get(a)) {
+                if (con.destino.equals(b)) {
+                    return con.distancia;
+                }
+            }
+        }
+        return 0.0; // No hay conexión directa
+    }
 }

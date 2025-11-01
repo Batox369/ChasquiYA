@@ -231,8 +231,11 @@ public class AdminMenuPanel extends JPanel {
                 txtDistancia.setText(""); // Limpiar campo
 
                 // Recargar grafo y repintar mapa
-                GestorGrafos.getInstancia().recargarGrafo();
-                mainFrame.getMapaPanel().repaint();
+                GestorGrafos gestor = GestorGrafos.getInstancia();
+                gestor.recargarGrafo();
+                // ¡Paso clave! Pasa el NUEVO grafo al panel del mapa
+                mainFrame.getRMapaPanel().actualizarGrafo(gestor.getGrafo());
+
                 JOptionPane.showMessageDialog(this, "El grafo ha sido actualizado.", "Información", JOptionPane.INFORMATION_MESSAGE);
 
             } else {
@@ -258,9 +261,11 @@ public class AdminMenuPanel extends JPanel {
             lblCoordsSeleccionadas.setText("Ubicación: (Selecciona nueva ubicación)");
 
             // Recargar grafo, repintar mapa Y ACTUALIZAR COMBOBOXES
-            GestorGrafos.getInstancia().recargarGrafo();
-            mainFrame.getMapaPanel().repaint();
-            actualizarComboBoxesConexion(); // <-- ACTUALIZAR COMBOBOXES
+            GestorGrafos gestor = GestorGrafos.getInstancia();
+            gestor.recargarGrafo();
+            // ¡Paso clave! Pasa el NUEVO grafo al panel del mapa
+            mainFrame.getRMapaPanel().actualizarGrafo(gestor.getGrafo());
+            actualizarComboBoxesConexion();
             actualizarComboBoxZonasConductores(); // <-- ACTUALIZAR COMBOBOX CONDUCTORES
             JOptionPane.showMessageDialog(this, "El grafo ha sido actualizado.", "Información", JOptionPane.INFORMATION_MESSAGE);
 

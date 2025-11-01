@@ -278,6 +278,11 @@ public class MainFrame extends JFrame {
         return modoColocarZona;
     }
 
+    public mapaPanel getRMapaPanel() {
+        return panelMapa;
+    }
+
+
     public JPanel getMapaPanel() {
         if (selectedPanel == null) {
             System.err.println("Advertencia: Se llamó a getMapaPanel() antes de inicializar panelMapa.");

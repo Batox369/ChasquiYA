@@ -24,7 +24,7 @@ public class Viaje {
     public Viaje(Coordenada origen, Coordenada destino) {
         this.origen = origen;
         this.destino = destino;
-        this.distanciaMetros = calcularDistanciaMetros();
+        this.distanciaMetros = 0.0;
         this.estado = "PENDIENTE";
         this.fechaSolicitud = LocalDateTime.now();
     }
@@ -46,17 +46,12 @@ public class Viaje {
         this.origen = origen;
         this.destino = destino;
         this.rutaZonas = rutaZonas;
-        this.distanciaMetros = calcularDistanciaMetros();
-    }
-
-    // === Cálculo de distancia ===
-    private double calcularDistanciaMetros() {
-        double distanciaPixeles = origen.calcularDistancia(destino);
-        return distanciaPixeles * 10;
+        this.distanciaMetros = 0.0;
     }
 
     // === Métodos auxiliares existentes ===
     public String getDistanciaFormateada() {
+        if (distanciaMetros == 0) return "-- km";
         if (distanciaMetros >= 1000) {
             return String.format("%.2f km", distanciaMetros / 1000);
         }
