@@ -5,22 +5,20 @@ import java.awt.*;
 import app.infrastructure.shared.constants.Colors;
 
 public class InputField extends JPanel {
-    private JLabel label;
-    private JTextField textField;
+    private final JTextField textField;
 
     public InputField(String labelText) {
-        setLayout(new BorderLayout(5, 5));
-        setOpaque(false);
-
-        label = new JLabel(labelText);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        label.setForeground(Colors.TEXT_PRIMARY);
+        setLayout(new BorderLayout());
+        // El panel exterior tendrá el fondo y el borde
+        setBackground(Color.WHITE);
+        setBorder(BorderFactory.createLineBorder(new Color(226, 232, 240), 1));
 
         textField = new JTextField(15);
         textField.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        textField.setBorder(BorderFactory.createLineBorder(Colors.BORDER));
+        // El JTextField interno es transparente y no tiene borde
+        textField.setOpaque(false);
+        textField.setBorder(BorderFactory.createEmptyBorder(5, 8, 5, 8)); // Padding interno
 
-        add(label, BorderLayout.NORTH);
         add(textField, BorderLayout.CENTER);
     }
 
@@ -39,4 +37,9 @@ public class InputField extends JPanel {
     public JTextField getField() {
         return textField;
     }
+
+    /**
+     * Este método ya no es necesario, el estilo se aplica en el constructor.
+     */
+    public void setFlatLook() {}
 }

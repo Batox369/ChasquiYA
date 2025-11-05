@@ -18,10 +18,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import javax.imageio.ImageIO;
 
-public class mapaPanel {
+public class mapaPanel{
     private JPanel rootPanel;
     private JPanel mapaCanvas;
-    private JPanel controlsPanel;
 
     private BufferedImage imagen;
     private double zoom = 1.0;
@@ -29,7 +28,7 @@ public class mapaPanel {
     private int offsetY = 0;
     private int lastX, lastY;
 
-    private static final double MIN_ZOOM = 0.5;
+    private static final double MIN_ZOOM = 0.8;
     private static final double MAX_ZOOM = 5.0;
     private static final double ZOOM_FACTOR = 1.1;
 
@@ -37,6 +36,7 @@ public class mapaPanel {
     private MapMarker markerDestino;
     private Viaje viajeActual;
     private boolean isDragging = false;
+    private boolean mapaInicializado = false;
 
     private MainFrame mainFrame;
     private TripSidebarPanel tripSidebar;
@@ -57,18 +57,7 @@ public class mapaPanel {
         initComponents();
         setupListeners();
 
-        // (Tu código de HierarchyListener para centrar el mapa está perfecto)
-        rootPanel.addHierarchyListener(e -> {
-            if ((e.getChangeFlags() & HierarchyEvent.SHOWING_CHANGED) != 0 && rootPanel.isShowing()) {
-                SwingUtilities.invokeLater(() -> {
-                    centerMap();
-                    mapaCanvas.revalidate();
-                    mapaCanvas.repaint();
-                });
-            }
-        });
     }
-
     private void loadImage() {
         try {
             imagen = ImageIO.read(new File("src/main/resources/mapa.jpg"));
@@ -101,60 +90,7 @@ public class mapaPanel {
         mapaCanvas.setBorder(null);
         mapaCanvas.setCursor(new Cursor(Cursor.MOVE_CURSOR));
 
-        createControlsPanel();
-
-        rootPanel.add(controlsPanel, BorderLayout.NORTH);
         rootPanel.add(mapaCanvas, BorderLayout.CENTER);
-    }
-
-    private void createControlsPanel() {
-        controlsPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
-        controlsPanel.setBackground(Colors.SECONDARY);
-
-        JButton zoomInBtn = createControlButton("+", "Acercar");
-        zoomInBtn.addActionListener(e -> zoomIn());
-
-        JButton zoomOutBtn = createControlButton("-", "Alejar");
-        zoomOutBtn.addActionListener(e -> zoomOut());
-
-        JButton resetBtn = createControlButton("⟲", "Centrar");
-        resetBtn.addActionListener(e -> centerMap());
-
-        JLabel zoomLabel = new JLabel(String.format("Zoom: %.0f%%", zoom * 100));
-        zoomLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        zoomLabel.setForeground(Colors.TEXT_SECONDARY);
-
-        mapaCanvas.addPropertyChangeListener("zoom", evt -> {
-            zoomLabel.setText(String.format("Zoom: %.0f%%", zoom * 100));
-        });
-
-        controlsPanel.add(zoomOutBtn);
-        controlsPanel.add(zoomLabel);
-        controlsPanel.add(zoomInBtn);
-        controlsPanel.add(resetBtn);
-    }
-
-    private JButton createControlButton(String text, String tooltip) {
-        JButton button = new JButton(text);
-        button.setFont(new Font("Segoe UI", Font.BOLD, 16));
-        button.setPreferredSize(new Dimension(45, 35));
-        button.setBackground(Colors.PRIMARY);
-        button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
-        button.setBorderPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        button.setToolTipText(tooltip);
-
-        button.addMouseListener(new MouseAdapter() {
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(Colors.HOVER);
-            }
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(Colors.PRIMARY);
-            }
-        });
-
-        return button;
     }
 
     private void setupListeners() {
@@ -201,37 +137,64 @@ public class mapaPanel {
         mapaCanvas.addComponentListener(new ComponentAdapter() {
             @Override
             public void componentResized(ComponentEvent e) {
-                constrainOffset();
-                mapaCanvas.repaint();
+                int w = mapaCanvas.getWidth();
+                int h = mapaCanvas.getHeight();
+
+                if (!mapaInicializado && w > 400 && h > 300) {
+                    mapaInicializado = true; // ⚠️ importante: antes del invokeLater
+
+                    SwingUtilities.invokeLater(() -> {
+                        centerMap();
+                        mapaCanvas.revalidate();
+                        mapaCanvas.repaint();
+
+                        System.out.printf(
+                                "Mapa inicializado correctamente con tamaño estable: %dx%d zoom=%.3f%n",
+                                w, h, zoom
+                        );
+                        System.out.printf("[ZOOM-TRACE] %s -> %.3f%n",
+                                new Throwable().getStackTrace()[1].getMethodName(), zoom);
+                    });
+
+                    return;
+                }
+
+                // Fase normal tras inicialización
+                if (mapaInicializado) {
+                    constrainOffset();
+                    mapaCanvas.repaint();
+                }
             }
         });
+
     }
 
     private void handleMapClick(Point clickPoint) {
         // 1. Convertir clic de Pantalla -> a Coordenada de Imagen/Mundo
-        // (Invierte el zoom y el pan/offset)
         double mundoX = (clickPoint.x - offsetX) / zoom;
         double mundoY = (clickPoint.y - offsetY) / zoom;
 
-        if (mainFrame.getmodoColocarZona()) { // <-- Acceso directo (puede necesitar ajuste de visibilidad)
+        // 2. Revisa si estamos en "Modo Colocar Zona"
+        // (Corregí el nombre del método a la convención Java: getModoColocarZona)
+        if (mainFrame.getmodoColocarZona()) {
             mainFrame.onZonaColocada(mundoX, mundoY); // Llama al MainFrame con las coords
             return; // Termina aquí, no selecciones origen/destino
         }
 
-        // 2. Buscar la zona más cercana a esa coordenada de IMAGEN
+        // 3. Buscar la zona más cercana a esa coordenada de IMAGEN
         Zona zonaClic = buscarZonaCercana(mundoX, mundoY);
 
         if (zonaClic == null) return; // Clic en un lugar vacío
 
         if (zonaOrigen == null) {
-            // 3. Primer clic: Selecciona Origen
+            // 4. Primer clic: Selecciona Origen
             zonaOrigen = zonaClic;
             zonaDestino = null;
             rutaActual = null;
             tripSidebar.setEstadoSinViaje();
 
         } else if (zonaDestino == null) {
-            // 4. Segundo clic: Selecciona Destino
+            // 5. Segundo clic: Selecciona Destino
             zonaDestino = zonaClic;
 
             if (zonaOrigen.getId() == zonaDestino.getId()) {
@@ -240,26 +203,48 @@ public class mapaPanel {
             }
             System.out.println("Calculando ruta desde: " + zonaOrigen.getNombre() + " (ID: " + zonaOrigen.getId() + ") hasta: " + zonaDestino.getNombre() + " (ID: " + zonaDestino.getId() + ")");
 
-            // 5. Calcular ruta usando el Gestor
+            // 6. Calcular la RUTA (la lista de zonas)
             rutaActual = gestorRutas.calcularRutaMasCorta(grafoZonas, zonaOrigen, zonaDestino);
             System.out.println("Ruta calculada: " + (rutaActual == null ? "NULL" : rutaActual.size() + " zonas"));
-            if (rutaActual == null) {
+
+            // 7. Validar la ruta (una ruta válida debe tener al menos 2 zonas)
+            if (rutaActual == null || rutaActual.size() < 2) {
                 JOptionPane.showMessageDialog(rootPanel,
                         "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
                         "Ruta no encontrada",
                         JOptionPane.ERROR_MESSAGE);
-                zonaDestino = null;
+                // ¡ARREGLO! Si la ruta falla, reseteamos AMBAS zonas para no quedarnos atascados.
+                zonaOrigen = null;  // <-- AÑADIR ESTA LÍNEA
+                zonaDestino = null; // Esta línea ya estaba, la dejamos.
+                rutaActual = null; // Limpia la ruta fallida
                 return;
             }
 
+            // --- ¡ARREGLO PRINCIPAL! ---
+            // 8. Calcular la DISTANCIA total de la ruta del grafo
+            double distanciaTotalRuta = 0.0;
+            for (int i = 0; i < rutaActual.size() - 1; i++) {
+                Zona a = rutaActual.get(i);
+                Zona b = rutaActual.get(i + 1);
+                // Llama al método de GrafoZonas que suma los pesos
+                distanciaTotalRuta += grafoZonas.getDistanciaEntre(a, b);
+            }
+
+            // 9. Crear el Viaje (con el constructor simple)
             viajeActual = new Viaje(
                     new Coordenada(zonaOrigen.getLongitud(), zonaOrigen.getLatitud()), // Coordenada X, Y del origen
                     new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()) // Coordenada X, Y del destino
             );
-            viajeActual.setRutaZonas(rutaActual); // Guardamos la ruta de nodos
 
+            // 10. Establecer la ruta y la distancia CALCULADA
+            viajeActual.setRutaZonas(rutaActual);
+            // (Asumiendo tu factor de conversión de 1 peso = 10 metros, como en tu clase Viaje)
+            viajeActual.setDistanciaMetros(distanciaTotalRuta * 10);
+
+            // 11. Actualizar la UI
             tripSidebar.actualizarViaje(viajeActual);
             mainFrame.mostrarSidebarDeViaje();
+
         } else {
             // 7. Tercer clic: Reinicia (selecciona nuevo origen)
             zonaOrigen = zonaClic;
@@ -391,24 +376,17 @@ public class mapaPanel {
     private void centerMap() {
         if (imagen == null) return;
 
-        int canvasWidth = mapaCanvas.getWidth();
-        int canvasHeight = mapaCanvas.getHeight();
-        int imgWidth = (int) (imagen.getWidth() * zoom);
-        int imgHeight = (int) (imagen.getHeight() * zoom);
+        final int canvasWidth = mapaCanvas.getWidth();
+        final int canvasHeight = mapaCanvas.getHeight();
 
-        offsetX = (canvasWidth - imgWidth) / 2;
-        offsetY = (canvasHeight - imgHeight) / 2;
+        // --- SOLUCIÓN ---
+        // Establecemos el zoom inicial fijo a 0.8 en lugar de calcularlo.
+        zoom = 0.8;
+        System.out.println("[TRACE-ZOOM] cambio en " + getClass().getSimpleName() + " -> " + zoom);
 
-        if (imgWidth > canvasWidth || imgHeight > canvasHeight) {
-            double scaleX = (double) canvasWidth / imagen.getWidth();
-            double scaleY = (double) canvasHeight / imagen.getHeight();
-            zoom = Math.min(scaleX, scaleY) * 0.9;
-
-            imgWidth = (int) (imagen.getWidth() * zoom);
-            imgHeight = (int) (imagen.getHeight() * zoom);
-            offsetX = (canvasWidth - imgWidth) / 2;
-            offsetY = (canvasHeight - imgHeight) / 2;
-        }
+        // Centramos la imagen con el nuevo zoom
+        offsetX = (canvasWidth - (int) (imagen.getWidth() * zoom)) / 2;
+        offsetY = (canvasHeight - (int) (imagen.getHeight() * zoom)) / 2;
 
         constrainOffset();
         mapaCanvas.repaint();
@@ -441,5 +419,11 @@ public class mapaPanel {
 
     public JPanel getRootPanel() {
         return rootPanel;
+    }
+
+    public void actualizarGrafo(GrafoZonas nuevoGrafo) {
+        this.grafoZonas = nuevoGrafo;
+        resetearMapa(); // Limpia selecciones y repinta el canvas
+        System.out.println("mapaPanel: Grafo actualizado y mapa repintado.");
     }
 }

@@ -41,6 +41,8 @@ public class RouteRenderer {
 
         // --- AJUSTE DE GROSOR ---
         // Dividimos por el zoom para que el grosor sea constante
+        zoom = zoom / 1.6;
+
         float grosorSombra = (float)(6 / zoom);
         float grosorLinea = (float)(3.5 / zoom);
         float grosorPunteado = (float)(1.2 / zoom);

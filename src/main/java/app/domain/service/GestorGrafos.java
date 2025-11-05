@@ -101,8 +101,6 @@ public class GestorGrafos {
      */
     public void recargarGrafo() {
         System.out.println("Recargando grafo desde la base de datos...");
-        // Simplemente vuelve a llamar al método de carga,
-        // que crea una nueva instancia de GrafoZonas
         cargarGrafoDesdeBD();
     }
 }

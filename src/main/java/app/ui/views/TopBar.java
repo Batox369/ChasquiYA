@@ -6,8 +6,7 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 
 public class TopBar extends JPanel {
-
-    private JButton userButton;
+    
     private JLabel userLabel; // <-- CAMBIO 1: Convertido en variable de instancia
 
     public TopBar(String appName, String userName) {
@@ -37,30 +36,14 @@ public class TopBar extends JPanel {
         userLabel = new JLabel("👤  " + userName);
         userLabel.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 16));
         userLabel.setForeground(Colors.TEXT_PRIMARY);
-        userLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-
-        userButton = new JButton();
-        userButton.setLayout(new BorderLayout());
-        userButton.setFocusPainted(false);
-        userButton.setBorderPainted(false);
-        userButton.setContentAreaFilled(false);
-        userButton.add(userLabel, BorderLayout.CENTER);
-
-        rightPanel.add(userButton);
+        userLabel.setBorder(BorderFactory.createEmptyBorder(12, 0, 0, 0)); // Añadimos un margen superior para bajarlo
+    
+        rightPanel.add(userLabel);
 
         add(leftPanel, BorderLayout.WEST);
         add(rightPanel, BorderLayout.EAST);
     }
 
-    public void addAdminButtonListener(ActionListener listener) {
-        userButton.addActionListener(listener);
-    }
-
-    // --- CAMBIO 3: MÉTODO NUEVO AÑADIDO ---
-    /**
-     * Actualiza el nombre del usuario en la barra superior.
-     * @param name El nuevo nombre a mostrar.
-     */
     public void setUserName(String name) {
         if (name.length() > 20) { // Acorta nombres largos
             name = name.substring(0, 19) + "...";
