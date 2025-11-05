@@ -14,6 +14,11 @@ public class SideNavigation extends JPanel {
     private ModernButton configuracionBtn;
     private ModernButton perfilBtn;
 
+    // Componentes para la sección de administrador
+    private ModernButton adminBtn;
+    private JSeparator adminSeparator;
+    private JLabel adminTitle;
+
     public SideNavigation() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         setBackground(Colors.CARD_BG);
@@ -46,6 +51,26 @@ public class SideNavigation extends JPanel {
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(perfilBtn);
         add(Box.createVerticalGlue());
+
+        // --- Sección de Administrador (inicialmente oculta) ---
+        adminSeparator = new JSeparator();
+        adminSeparator.setForeground(Colors.BORDER);
+        adminSeparator.setMaximumSize(new Dimension(Integer.MAX_VALUE, 1));
+
+        adminTitle = new JLabel("ADMINISTRADOR");
+        adminTitle.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        adminTitle.setForeground(Colors.TEXT_SECONDARY);
+        adminTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        adminTitle.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 0));
+
+        adminBtn = new ModernButton("Panel de Control", "🛠️");
+
+        add(adminSeparator);
+        add(adminTitle);
+        add(adminBtn);
+
+        // Por defecto, la sección de admin está oculta
+        setAdminFeaturesVisible(true);
     }
 
     public void addSolicitarViajeListener(ActionListener listener) {
@@ -64,11 +89,16 @@ public class SideNavigation extends JPanel {
         perfilBtn.addActionListener(listener);
     }
 
+    public void addAdminListener(ActionListener listener) {
+        adminBtn.addActionListener(listener);
+    }
+
     public void setSelectedButton(String buttonName) {
         solicitarViajeBtn.setSelected(false);
         historialBtn.setSelected(false);
         configuracionBtn.setSelected(false);
         perfilBtn.setSelected(false);
+        adminBtn.setSelected(false);
 
         switch (buttonName) {
             case "solicitar":
@@ -83,6 +113,20 @@ public class SideNavigation extends JPanel {
             case "perfil":
                 perfilBtn.setSelected(true);
                 break;
+            case "admin":
+                adminBtn.setSelected(true);
+                break;
         }
+    }
+
+    /**
+     * Muestra u oculta la sección de administración en la barra de navegación.
+     * Llama a este método después de que un usuario inicie sesión.
+     * @param visible true para mostrar, false para ocultar.
+     */
+    public void setAdminFeaturesVisible(boolean visible) {
+        adminSeparator.setVisible(visible);
+        adminTitle.setVisible(visible);
+        adminBtn.setVisible(visible);
     }
 }

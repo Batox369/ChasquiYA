@@ -1,7 +1,7 @@
 package app;
 
 import app.infrastructure.persistence.ConexionBD;
-import app.ui.MainFrame; // Tu dashboard/frame principal
+import app.ui.MainFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.sql.Connection;

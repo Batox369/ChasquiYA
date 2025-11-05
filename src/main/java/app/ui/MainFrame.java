@@ -48,7 +48,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1020, 640);
+        setSize(1122, 704);
         setLocationRelativeTo(null);
         setResizable(false);
         setTitle("Sistema de Viajes");
@@ -88,6 +88,7 @@ public class MainFrame extends JFrame {
         centerPanel.add(leftPanel, BorderLayout.WEST);
         selectedPanel = new JPanel(new BorderLayout());
         selectedPanel.setBackground(Colors.SECONDARY);
+        selectedPanel.setBorder(null); // Eliminamos cualquier borde del panel de contenido
         centerPanel.add(selectedPanel, BorderLayout.CENTER);
         mainFrame.add(centerPanel, BorderLayout.CENTER);
         setContentPane(mainFrame);
@@ -216,6 +217,10 @@ public class MainFrame extends JFrame {
         sideNav.addPerfilListener(e -> {
             mostrarMenuYPanel(perfilPanel);
             sideNav.setSelectedButton("perfil");
+        });
+        sideNav.addAdminListener(e -> {
+            mostrarMenuYPanel(adminPanel);
+            sideNav.setSelectedButton("admin");
         });
         tripSidebar.addCancelarListener(e -> {
             panelMapa.resetearMapa();
