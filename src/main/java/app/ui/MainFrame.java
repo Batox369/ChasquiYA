@@ -136,7 +136,6 @@ public class MainFrame extends JFrame {
         initializePanels();
         setupListeners();
         topBar.setUserName(user.getUsername());
-        topBar.addAdminButtonListener(e -> mostrarAdminMenu());
         adminPanel.addVolverListener(e -> {
             setContentPane(mainFrame);
             revalidate();
@@ -248,11 +247,6 @@ public class MainFrame extends JFrame {
     public void mostrarDashboard() {
         mostrarMenuYPanel(dashboardPanel);
         sideNav.setSelectedButton("solicitar");
-    }
-
-    public void mostrarMenuYPerfil() {
-        mostrarMenuYPanel(perfilPanel);
-        sideNav.setSelectedButton("perfil");
     }
 
     public void mostrarMapa() {
