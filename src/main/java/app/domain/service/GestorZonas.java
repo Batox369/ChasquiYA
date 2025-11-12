@@ -59,7 +59,7 @@ public class GestorZonas {
             return;
         }
         z.agregarConductor(conductor);
-        System.out.println("✅ " + conductor.getNombre() + " agregado a zona " + z.getNombre());
+        System.out.println("✅ " + conductor.getNombreCompleto() + " agregado a zona " + z.getNombre());
     }
 
     // Imprimir zonas en orden

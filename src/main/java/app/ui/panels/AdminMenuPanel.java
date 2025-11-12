@@ -32,7 +32,6 @@ public class AdminMenuPanel extends JPanel {
 
     // private final ModernActionButton btnVolver; // Eliminado
     private final MainFrame mainFrame;
-    private final Sistema sistema;
 
     // Conductores
     private InputField conductorNombreField;
@@ -52,8 +51,7 @@ public class AdminMenuPanel extends JPanel {
 
     private String nombreZonaPendiente = null;
 
-    public AdminMenuPanel(Sistema sistema, MainFrame mainFrame) {
-        this.sistema = sistema;
+    public AdminMenuPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
 
         setLayout(new BorderLayout(0, 0));
