@@ -224,10 +224,10 @@ public class TripSidebarPanel extends JPanel {
         Coordenada origen = viaje.getOrigen();
         Coordenada destino = viaje.getDestino();
 
-        origenLabel.setText(String.format("(%.0f, %.0f)", origen.getX(), origen.getY()));
+        origenLabel.setText(viaje.getNombreOrigen());
         origenLabel.setForeground(Colors.SUCCESS);
 
-        destinoLabel.setText(String.format("(%.0f, %.0f)", destino.getX(), destino.getY()));
+        destinoLabel.setText(viaje.getNombreDestino());
         destinoLabel.setForeground(Colors.ERROR);
 
         updateInfoValue(distanciaPanel, viaje.getDistanciaFormateada());

@@ -17,13 +17,17 @@ public class Viaje {
     // === Campos del modelo ===
     private Coordenada origen;
     private Coordenada destino;
+    private String nombreOrigen;
+    private String nombreDestino;
     private double distanciaMetros;
     private List<Zona> rutaZonas; // 🔹 Nueva propiedad: secuencia de zonas
 
     // === Constructor principal ===
-    public Viaje(Coordenada origen, Coordenada destino) {
+    public Viaje(Coordenada origen, Coordenada destino, String nombreOrigen, String nombreDestino) {
         this.origen = origen;
         this.destino = destino;
+        this.nombreOrigen = nombreOrigen;
+        this.nombreDestino = nombreDestino;
         this.distanciaMetros = 0.0;
         this.estado = "PENDIENTE";
         this.fechaSolicitud = LocalDateTime.now();
@@ -33,7 +37,8 @@ public class Viaje {
     public Viaje(long id, String estado, int clienteId, Integer conductorId,
                  int zonaOrigenId, int zonaDestinoId,
                  LocalDateTime fechaSolicitud, LocalDateTime fechaCompletado,
-                 Coordenada origen, Coordenada destino, List<Zona> rutaZonas) {
+                 Coordenada origen, Coordenada destino, List<Zona> rutaZonas,
+                 String nombreOrigen, String nombreDestino) {
 
         this.id = id;
         this.estado = estado;
@@ -46,6 +51,8 @@ public class Viaje {
         this.origen = origen;
         this.destino = destino;
         this.rutaZonas = rutaZonas;
+        this.nombreOrigen = nombreOrigen;
+        this.nombreDestino = nombreDestino;
         this.distanciaMetros = 0.0;
     }
 
@@ -100,4 +107,10 @@ public class Viaje {
 
     public double getDistanciaMetros() { return distanciaMetros; }
     public void setDistanciaMetros(double distanciaMetros) { this.distanciaMetros = distanciaMetros; }
+
+    public String getNombreOrigen() { return nombreOrigen; }
+    public void setNombreOrigen(String nombreOrigen) { this.nombreOrigen = nombreOrigen; }
+
+    public String getNombreDestino() { return nombreDestino; }
+    public void setNombreDestino(String nombreDestino) { this.nombreDestino = nombreDestino; }
 }

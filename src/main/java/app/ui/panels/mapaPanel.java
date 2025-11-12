@@ -233,7 +233,9 @@ public class mapaPanel{
             // 9. Crear el Viaje (con el constructor simple)
             viajeActual = new Viaje(
                     new Coordenada(zonaOrigen.getLongitud(), zonaOrigen.getLatitud()), // Coordenada X, Y del origen
-                    new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()) // Coordenada X, Y del destino
+                    new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()),
+                    zonaOrigen.getNombre(),
+                    zonaDestino.getNombre()// Coordenada X, Y del destino
             );
 
             // 10. Establecer la ruta y la distancia CALCULADA
