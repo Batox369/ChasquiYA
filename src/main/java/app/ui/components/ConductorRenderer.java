@@ -1,5 +1,6 @@
 package app.ui.components;
 
+import app.domain.model.Coordenada;
 import app.domain.model.Conductor;
 import app.domain.model.Zona;
 
@@ -17,10 +18,10 @@ public class ConductorRenderer {
      * Dibuja un conductor en el mapa en la posición de su zona actual.
      * @param g2d El contexto gráfico 2D.
      * @param conductor El conductor a dibujar.
-     * @param zona La zona donde se encuentra el conductor.
      */
-    public static void drawConductor(Graphics2D g2d, Conductor conductor, Zona zona) {
-        if (zona == null) return; // No dibujar si el conductor no tiene zona
+    public static void drawConductor(Graphics2D g2d, Conductor conductor) {
+        Coordenada pos = conductor.getPosicionActual();
+        if (pos == null) return; // No dibujar si el conductor no tiene posición
 
         Color color = conductorColors.computeIfAbsent(conductor.getId(), id -> {
             // Genera un color aleatorio pero consistente para cada conductor
@@ -30,8 +31,8 @@ public class ConductorRenderer {
             return new Color(r, g, b);
         });
 
-        int x = (int) zona.getLongitud();
-        int y = (int) zona.getLatitud();
+        int x = (int) pos.getX();
+        int y = (int) pos.getY();
         int size = 12; // Tamaño del cuadrado que representa al conductor
 
         g2d.setColor(color);

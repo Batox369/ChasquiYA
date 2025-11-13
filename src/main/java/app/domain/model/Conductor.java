@@ -9,6 +9,16 @@ public class Conductor {
     private EstadoConductor estado;
     private Integer zonaActualId; // Se usa Integer para permitir valores nulos (null)
 
+    // --- Atributos para la simulación de movimiento ---
+    private Coordenada posicionActual; // Posición X,Y en el mapa en tiempo real
+    private Zona zonaOrigenViaje;
+    private Zona zonaDestinoViaje;
+    private long tiempoInicioViajeMs; // System.currentTimeMillis() al empezar un tramo
+    private long duracionViajeMs;     // Duración total calculada para el tramo
+
+    // --- Fin de atributos de simulación ---
+
+
     public Conductor(String nombreCompleto) {
         this.nombreCompleto = nombreCompleto;
         this.placaVehiculo = generarPlacaAutomatica(); // Se llama al generador automático
@@ -63,6 +73,46 @@ public class Conductor {
 
     public void setZonaActualId(Integer zonaActualId) {
         this.zonaActualId = zonaActualId;
+    }
+
+    // --- Getters y Setters para la simulación ---
+
+    public Coordenada getPosicionActual() {
+        return posicionActual;
+    }
+
+    public void setPosicionActual(Coordenada posicionActual) {
+        this.posicionActual = posicionActual;
+    }
+
+    public Zona getZonaOrigenViaje() {
+        return zonaOrigenViaje;
+    }
+
+    public Zona getZonaDestinoViaje() {
+        return zonaDestinoViaje;
+    }
+
+    public long getTiempoInicioViajeMs() {
+        return tiempoInicioViajeMs;
+    }
+
+    public long getDuracionViajeMs() {
+        return duracionViajeMs;
+    }
+
+    /**
+     * Inicia un nuevo tramo de viaje entre dos zonas.
+     * @param origen La zona de partida.
+     * @param destino La zona de llegada.
+     * @param duracionMs La duración total que tardará el viaje en milisegundos.
+     */
+    public void iniciarTramo(Zona origen, Zona destino, long duracionMs) {
+        this.zonaOrigenViaje = origen;
+        this.zonaDestinoViaje = destino;
+        this.tiempoInicioViajeMs = System.currentTimeMillis();
+        this.duracionViajeMs = duracionMs;
+        this.setEstado(EstadoConductor.OCUPADO);
     }
 
     @Override

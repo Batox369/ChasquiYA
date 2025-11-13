@@ -7,7 +7,6 @@ import app.domain.repository.GrafoRepository;
 import app.infrastructure.persistence.MySQLGrafoRepository; // La implementación
 
 import java.util.List;
-
 /**
  * Servicio Singleton que gestiona la carga y el acceso
  * al grafo de zonas en memoria.

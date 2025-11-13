@@ -4,6 +4,7 @@ import app.domain.model.Coordenada;
 import app.domain.model.Viaje;
 import app.domain.service.GestorConductores;
 import app.domain.service.GestorRutas;
+import app.domain.service.SimuladorMovimientoConductores;
 import app.ui.components.MapMarker;
 import app.ui.components.RouteRenderer;
 import app.ui.components.ZonaRenderer; // Importa el renderer
@@ -50,6 +51,7 @@ public class mapaPanel{
     private Zona zonaDestino;
     private java.util.List<Zona> rutaActual;
     private List<Conductor> conductores;
+    private SimuladorMovimientoConductores simulador;
 
     public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas, GestorConductores gestorConductores) {
         this.mainFrame = mainFrame;
@@ -58,11 +60,14 @@ public class mapaPanel{
         this.gestorRutas = gestorRutas;
         this.conductores = gestorConductores.getConductores();
 
-
         loadImage();
         initComponents();
         setupListeners();
 
+        // --- ¡NUEVO! Creamos e iniciamos el simulador ---
+        // Le pasamos `mapaCanvas::repaint` como la acción a ejecutar en cada actualización.
+        this.simulador = new SimuladorMovimientoConductores(this.conductores, this.grafoZonas, mapaCanvas::repaint);
+        this.simulador.start();
     }
     private void loadImage() {
         try {
@@ -340,8 +345,6 @@ public class mapaPanel{
                 ZonaRenderer.drawZona(g2d, zona, seleccionada);
             }
         }
-        System.out.println("Intentando dibujar ruta: " + (rutaActual == null ? "NO hay ruta" : "SI hay ruta (" + rutaActual.size() + " zonas)"));
-        // 3B. Dibujar Ruta Calculada
         if (rutaActual != null) {
             RouteRenderer.drawRuta(g2d, rutaActual, zoom);
         }
@@ -349,12 +352,7 @@ public class mapaPanel{
         // --- 4. DIBUJAR CONDUCTORES ---
         if (conductores != null && grafoZonas != null) {
             for (Conductor conductor : conductores) {
-                if (conductor.getZonaActualId() != null) {
-                    Zona zonaConductor = grafoZonas.getZona(conductor.getZonaActualId());
-                    if (zonaConductor != null) {
-                        ConductorRenderer.drawConductor(g2d, conductor, zonaConductor);
-                    }
-                }
+                ConductorRenderer.drawConductor(g2d, conductor);
             }
         }
 
