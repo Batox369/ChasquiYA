@@ -92,7 +92,7 @@ public class MainFrame extends JFrame {
         centerPanel.add(selectedPanel, BorderLayout.CENTER);
         mainFrame.add(centerPanel, BorderLayout.CENTER);
         setContentPane(mainFrame);
-        adminPanel = new AdminMenuPanel(sistema, this);
+        adminPanel = new AdminMenuPanel(this);
     }
 
     private void showGuestView(JPanel guestPanel) {
@@ -197,7 +197,7 @@ public class MainFrame extends JFrame {
         historialPanel = new HistorialPanel();
         configuracionPanel = new ConfiguracionPanel();
         perfilPanel = new PerfilPanel(this);
-        adminPanel = new AdminMenuPanel(sistema, this);
+        adminPanel = new AdminMenuPanel(this);
     }
 
     private void setupListeners() {
