@@ -2,12 +2,14 @@ package app.ui.panels;
 
 import app.domain.model.Coordenada;
 import app.domain.model.Viaje;
+import app.domain.service.GestorConductores;
 import app.domain.service.GestorRutas;
 import app.ui.components.MapMarker;
 import app.ui.components.RouteRenderer;
 import app.ui.components.ZonaRenderer; // Importa el renderer
 import app.domain.model.*;
 import app.infrastructure.shared.constants.Colors;
+import app.ui.components.ConductorRenderer;
 import app.ui.MainFrame;
 import app.ui.views.TripSidebarPanel;
 
@@ -16,6 +18,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.List;
 import javax.imageio.ImageIO;
 
 public class mapaPanel{
@@ -46,12 +49,15 @@ public class mapaPanel{
     private Zona zonaOrigen;
     private Zona zonaDestino;
     private java.util.List<Zona> rutaActual;
+    private List<Conductor> conductores;
 
-    public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas) {
+    public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas, GestorConductores gestorConductores) {
         this.mainFrame = mainFrame;
         this.tripSidebar = tripSidebar;
         this.grafoZonas = grafoZonas; // Grafo cargado desde ZonaRepository
         this.gestorRutas = gestorRutas;
+        this.conductores = gestorConductores.getConductores();
+
 
         loadImage();
         initComponents();
@@ -340,6 +346,18 @@ public class mapaPanel{
             RouteRenderer.drawRuta(g2d, rutaActual, zoom);
         }
 
+        // --- 4. DIBUJAR CONDUCTORES ---
+        if (conductores != null && grafoZonas != null) {
+            for (Conductor conductor : conductores) {
+                if (conductor.getZonaActualId() != null) {
+                    Zona zonaConductor = grafoZonas.getZona(conductor.getZonaActualId());
+                    if (zonaConductor != null) {
+                        ConductorRenderer.drawConductor(g2d, conductor, zonaConductor);
+                    }
+                }
+            }
+        }
+
         g2d.dispose();
     }
 
@@ -427,5 +445,11 @@ public class mapaPanel{
         this.grafoZonas = nuevoGrafo;
         resetearMapa(); // Limpia selecciones y repinta el canvas
         System.out.println("mapaPanel: Grafo actualizado y mapa repintado.");
+    }
+
+    public void actualizarConductores(List<Conductor> nuevosConductores) {
+        this.conductores = nuevosConductores;
+        mapaCanvas.repaint();
+        System.out.println("mapaPanel: Lista de conductores actualizada y mapa repintado.");
     }
 }

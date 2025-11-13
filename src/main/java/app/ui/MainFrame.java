@@ -4,6 +4,7 @@ import app.domain.model.GrafoZonas;
 import app.domain.repository.ZonaRepository;
 import app.domain.service.GestorGrafos;
 import app.domain.service.GestorRutas;
+import app.domain.service.GestorConductores;
 import app.infrastructure.persistence.ConexionBD;
 import app.ui.panels.*;
 import app.infrastructure.shared.constants.Colors;
@@ -27,6 +28,7 @@ public class MainFrame extends JFrame {
     private JPanel selectedPanel;
     private TopBar topBar;
 
+    private GestorConductores gestorConductores;
     private SideNavigation sideNav;
     private TripSidebarPanel tripSidebar;
     private mapaPanel panelMapa;
@@ -55,7 +57,7 @@ public class MainFrame extends JFrame {
 
         sistema = Sistema.getInstancia();
         initializeLayout();
-
+        
         String savedUsername = SessionManager.getSavedUsername();
         if (savedUsername != null) {
             UsuarioRepository userRepo = new MySQLUsuarioRepository();
@@ -189,10 +191,13 @@ public class MainFrame extends JFrame {
         // 2. Crea una instancia del GestorRutas
         GestorRutas rutas = new GestorRutas();
 
-        // 3. Pasa las instancias correctas al constructor de mapaPanel
-        panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas);
-        // ------
+        // 3. Obtén la instancia del GestorConductores
+        this.gestorConductores = GestorConductores.getInstancia();
 
+        // 4. Pasa TODAS las instancias correctas al constructor de mapaPanel
+        panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas, this.gestorConductores);
+        // --------
+        
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         configuracionPanel = new ConfiguracionPanel();
