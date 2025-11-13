@@ -1,9 +1,11 @@
 package app.domain.model;
 
+import java.util.List;
 import java.util.Random;
 
 public class Conductor {
     private int id;
+    private List<Zona> rutaAsignada;
     private String nombreCompleto;
     private String placaVehiculo;
     private EstadoConductor estado;
@@ -75,6 +77,14 @@ public class Conductor {
         this.zonaActualId = zonaActualId;
     }
 
+    public List<Zona> getRutaAsignada() {
+        return rutaAsignada;
+    }
+
+    public void setRutaAsignada(List<Zona> rutaAsignada) {
+        this.rutaAsignada = rutaAsignada;
+    }
+
     // --- Getters y Setters para la simulación ---
 
     public Coordenada getPosicionActual() {
@@ -112,7 +122,9 @@ public class Conductor {
         this.zonaDestinoViaje = destino;
         this.tiempoInicioViajeMs = System.currentTimeMillis();
         this.duracionViajeMs = duracionMs;
-        this.setEstado(EstadoConductor.OCUPADO);
+        // --- ¡CORRECCIÓN! ---
+        // Ya no se cambia el estado aquí. El estado OCUPADO solo se asigna
+        // cuando un viaje REAL es solicitado, no para el movimiento de simulación.
     }
 
     @Override

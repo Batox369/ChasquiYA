@@ -1,18 +1,18 @@
 package app.ui;
 
 import app.domain.model.GrafoZonas;
+import app.domain.model.Zona;
 import app.domain.repository.ZonaRepository;
-import app.domain.service.GestorGrafos;
-import app.domain.service.GestorRutas;
-import app.domain.service.GestorConductores;
+import app.domain.service.*;
 import app.infrastructure.persistence.ConexionBD;
 import app.ui.panels.*;
 import app.infrastructure.shared.constants.Colors;
-import app.domain.service.Sistema;
 import app.ui.views.SideNavigation;
 import app.ui.views.TopBar;
 import app.ui.views.TripSidebarPanel;
 
+import java.util.List;
+import app.domain.model.Conductor;
 import app.domain.model.Usuario;
 import app.domain.repository.UsuarioRepository;
 import app.infrastructure.persistence.MySQLUsuarioRepository;
@@ -29,10 +29,10 @@ public class MainFrame extends JFrame {
     private TopBar topBar;
 
     private GestorConductores gestorConductores;
+    private AsignadorDeViajes asignadorDeViajes;
     private SideNavigation sideNav;
     private TripSidebarPanel tripSidebar;
-    private mapaPanel panelMapa;
-    private Sistema sistema;
+    private mapaPanel panelMapa;    private Sistema sistema;
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
     private ConfiguracionPanel configuracionPanel;
@@ -193,6 +193,7 @@ public class MainFrame extends JFrame {
 
         // 3. Obtén la instancia del GestorConductores
         this.gestorConductores = GestorConductores.getInstancia();
+        this.asignadorDeViajes = new AsignadorDeViajes(); // <-- NUEVO
 
         // 4. Pasa TODAS las instancias correctas al constructor de mapaPanel
         panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas, this.gestorConductores);
@@ -227,14 +228,39 @@ public class MainFrame extends JFrame {
             sideNav.setSelectedButton("admin");
         });
         tripSidebar.addCancelarListener(e -> {
+            // SIMPLIFICADO: Ahora solo necesitamos llamar a resetearMapa.
+            // Este método se encargará de notificar al MainFrame para que muestre la SideNav.
             panelMapa.resetearMapa();
-            mostrarMapa();
-            sideNav.setSelectedButton("solicitar");
         });
         tripSidebar.addSolicitarListener(e -> {
-            panelMapa.confirmarViaje();
-            mostrarMapa();
-            sideNav.setSelectedButton("solicitar");
+            // 1. Llama a la lógica de negocio (sin pop-up)
+            app.domain.model.Viaje viajeActual = panelMapa.getViajeActual();
+            if (viajeActual == null) return;
+
+            // 2. Actualiza el sidebar a su nuevo estado "Asignando..."
+            tripSidebar.setEstadoAsignandoConductor();
+
+            // 3. Llama al asignador para encontrar el conductor más cercano
+            GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo();
+            Zona zonaOrigenViaje = viajeActual.getRutaZonas().get(0);
+
+            Conductor conductorAsignado = asignadorDeViajes.asignarConductorMasCercano(
+                    zonaOrigenViaje, // Zona de origen del viaje
+                    gestorConductores.getConductores(),
+                    grafo
+            );
+
+            // 4. Actualiza la UI con el resultado
+            if (conductorAsignado != null) {
+                System.out.println("[DEBUG] Actualizando UI para mostrar al conductor: " + conductorAsignado.getNombreCompleto());
+                tripSidebar.mostrarConductorAsignado(conductorAsignado);
+                
+                // --- ¡CORRECCIÓN! ---
+                // Ya no calculamos la ruta aquí. Solo asignamos el viaje.
+                // El simulador se encargará de la ruta cuando el conductor esté listo.
+                viajeActual.setConductorId(conductorAsignado.getId()); // Guardamos el ID del conductor en el viaje
+
+            } // (Opcional: podrías añadir un else para mostrar "No se encontraron conductores")
         });
     }
 

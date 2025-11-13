@@ -66,7 +66,7 @@ public class mapaPanel{
 
         // --- ¡NUEVO! Creamos e iniciamos el simulador ---
         // Le pasamos `mapaCanvas::repaint` como la acción a ejecutar en cada actualización.
-        this.simulador = new SimuladorMovimientoConductores(this.conductores, this.grafoZonas, mapaCanvas::repaint);
+        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, this.grafoZonas, mapaCanvas::repaint);
         this.simulador.start();
     }
     private void loadImage() {
@@ -302,22 +302,28 @@ public class mapaPanel{
 
 
     public void confirmarViaje() {
+        // Ya no se muestra un JOptionPane.
+        // Simplemente se confirma que el viaje ha sido solicitado.
         if (viajeActual != null) {
-            JOptionPane.showMessageDialog(rootPanel,
-                    "¡Viaje solicitado exitosamente!\n\n" +
-                            "Distancia: " + viajeActual.getDistanciaFormateada() + "\n" +
-                            "Un conductor será asignado pronto.",
-                    "Viaje Confirmado",
-                    JOptionPane.INFORMATION_MESSAGE);
-            resetearMapa();
+            System.out.println("Viaje solicitado: " + viajeActual.getNombreOrigen() + " -> " + viajeActual.getNombreDestino());
+            // En el futuro, aquí se podría llamar a un servicio para que asigne un conductor.
         }
     }
 
     public void resetearMapa() {
         markerOrigen = null;
         markerDestino = null;
+        // --- ¡CORRECCIÓN! ---
+        // Limpiamos las zonas seleccionadas y la ruta para que dejen de dibujarse.
+        zonaOrigen = null;
+        zonaDestino = null;
+        rutaActual = null;
         viajeActual = null;
         tripSidebar.setEstadoSinViaje();
+        // --- ¡NUEVO! ---
+        // Notificamos al MainFrame que el viaje ha sido cancelado para que
+        // pueda restaurar la barra de navegación principal.
+        mainFrame.mostrarMapa();
         mapaCanvas.repaint();
     }
 
@@ -449,5 +455,9 @@ public class mapaPanel{
         this.conductores = nuevosConductores;
         mapaCanvas.repaint();
         System.out.println("mapaPanel: Lista de conductores actualizada y mapa repintado.");
+    }
+
+    public Viaje getViajeActual() {
+        return viajeActual;
     }
 }

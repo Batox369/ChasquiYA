@@ -38,6 +38,15 @@ public class GrafoZonas {
             this.destino = destino;
             this.distancia = distancia;
         }
+
+        public Zona getDestino() {
+            return destino;
+        }
+
+        public double getDistancia() {
+            return distancia;
+        }
+
     }
 
     public double getDistanciaEntre(Zona a, Zona b) {

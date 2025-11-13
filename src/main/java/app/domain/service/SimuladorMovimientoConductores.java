@@ -1,6 +1,7 @@
 package app.domain.service;
 
 import app.domain.model.*;
+import app.ui.MainFrame;
 
 import javax.swing.Timer;
 import java.awt.event.ActionListener;
@@ -13,22 +14,26 @@ import java.util.Random;
  */
 public class SimuladorMovimientoConductores {
 
-    private static final int VELOCIDAD_M_POR_S = 5; // 10 metros por segundo
+    private static final int VELOCIDAD_M_POR_S = 10; // 10 metros por segundo
     private static final int INTERVALO_ACTUALIZACION_MS = 10; // Actualiza la pantalla ~20 veces por segundo
 
     private final Timer timer;
     private final List<Conductor> conductores;
     private final GrafoZonas grafo;
     private final Random random = new Random();
+    private final GestorRutas gestorRutas = new GestorRutas(); // El simulador ahora necesita su propio gestor de rutas
+    private final MainFrame mainFrame; // <-- ¡NUEVO! Referencia al frame principal
     private final Runnable onUpdateCallback;
 
     /**
      * Constructor del simulador.
+     * @param mainFrame La instancia del frame principal para acceder a datos globales como el viaje actual.
      * @param conductores La lista de conductores a simular.
      * @param grafo El grafo de zonas para saber las rutas posibles.
      * @param onUpdateCallback Una acción (como `mapa.repaint()`) que se ejecutará cada vez que se actualice una posición.
      */
-    public SimuladorMovimientoConductores(List<Conductor> conductores, GrafoZonas grafo, Runnable onUpdateCallback) {
+    public SimuladorMovimientoConductores(MainFrame mainFrame, List<Conductor> conductores, GrafoZonas grafo, Runnable onUpdateCallback) {
+        this.mainFrame = mainFrame; // <-- ¡NUEVO!
         this.conductores = conductores;
         this.grafo = grafo;
         this.onUpdateCallback = onUpdateCallback;
@@ -81,29 +86,74 @@ public class SimuladorMovimientoConductores {
         long tiempoActual = System.currentTimeMillis();
 
         for (Conductor conductor : conductores) {
-            // Si el conductor está OCUPADO (en movimiento)
-            if (conductor.getEstado() == EstadoConductor.OCUPADO) {
-                long tiempoTranscurrido = tiempoActual - conductor.getTiempoInicioViajeMs();
-                double progreso = (double) tiempoTranscurrido / conductor.getDuracionViajeMs();
+            // --- ¡NUEVA LÓGICA UNIFICADA! ---
 
-                if (progreso >= 1.0) {
-                    // El viaje ha terminado, llegó a la zona de destino.
-                    conductor.setEstado(EstadoConductor.DISPONIBLE);
-                    conductor.setZonaActualId(conductor.getZonaDestinoViaje().getId());
-                    conductor.setPosicionActual(new Coordenada(conductor.getZonaDestinoViaje().getLongitud(), conductor.getZonaDestinoViaje().getLatitud()));
+            // 1. Si el conductor no tiene un destino (está quieto en un nodo).
+            if (conductor.getZonaDestinoViaje() == null) {
+                if (conductor.getEstado() == EstadoConductor.OCUPADO) {
+                    // Está OCUPADO y quieto: es el momento de calcular su ruta de recogida.
+                    if (conductor.getRutaAsignada() == null) {
+                        calcularYAsignarRutaDeRecogida(conductor);
+                    }
+                    // Una vez calculada (o si ya la tenía), inicia el siguiente tramo.
+                    iniciarSiguienteTramo(conductor);
                 } else {
-                    // El viaje está en curso, calculamos la posición intermedia (interpolación lineal).
-                    double x = conductor.getZonaOrigenViaje().getLongitud() + (conductor.getZonaDestinoViaje().getLongitud() - conductor.getZonaOrigenViaje().getLongitud()) * progreso;
-                    double y = conductor.getZonaOrigenViaje().getLatitud() + (conductor.getZonaDestinoViaje().getLatitud() - conductor.getZonaOrigenViaje().getLatitud()) * progreso;
-                    conductor.setPosicionActual(new Coordenada(x, y));
+                    // Está DISPONIBLE y quieto: inicia un viaje aleatorio.
+                    iniciarViajeAleatorio(conductor);
+                }
+                // En cualquier caso, si se le asignó un nuevo destino, pasamos al siguiente tick.
+                if (conductor.getZonaDestinoViaje() != null) {
+                    continue;
                 }
             }
-            // Si el conductor está DISPONIBLE (esperando en una zona)
-            else if (conductor.getEstado() == EstadoConductor.DISPONIBLE) {
-                // Decidimos si inicia un nuevo viaje aleatorio.
-                iniciarViajeAleatorio(conductor);
+
+            // --- ¡CORRECCIÓN! ---
+            // Si el conductor no tiene un destino, no hay movimiento que procesar.
+            if (conductor.getZonaDestinoViaje() == null) continue;
+
+            // 2. Si el conductor SÍ tiene un destino (está en movimiento entre dos nodos).
+            long tiempoTranscurrido = tiempoActual - conductor.getTiempoInicioViajeMs();
+            double progreso = (double) tiempoTranscurrido / conductor.getDuracionViajeMs();
+
+            if (progreso >= 1.0) {
+                // Ha llegado al final de un tramo.
+                Zona zonaAlcanzada = conductor.getZonaDestinoViaje();
+                conductor.setZonaActualId(zonaAlcanzada.getId());
+                conductor.setPosicionActual(new Coordenada(zonaAlcanzada.getLongitud(), zonaAlcanzada.getLatitud()));
+                conductor.iniciarTramo(zonaAlcanzada, null, 0); // Detiene el movimiento temporalmente.
+
+                // Ahora que está quieto, en el siguiente tick, la lógica del punto 1 decidirá qué hacer.
+
+            } else {
+                // Sigue en movimiento.
+                double x = conductor.getZonaOrigenViaje().getLongitud() + (conductor.getZonaDestinoViaje().getLongitud() - conductor.getZonaOrigenViaje().getLongitud()) * progreso;
+                double y = conductor.getZonaOrigenViaje().getLatitud() + (conductor.getZonaDestinoViaje().getLatitud() - conductor.getZonaOrigenViaje().getLatitud()) * progreso;
+                conductor.setPosicionActual(new Coordenada(x, y));
             }
         }
+    }
+
+    private void calcularYAsignarRutaDeRecogida(Conductor conductor) {
+        System.out.println("[SIM-DEBUG] Conductor " + conductor.getNombreCompleto() + " está quieto y OCUPADO. Calculando ruta de recogida.");
+        Viaje viajeAsignado = findActiveTripForConductor(conductor.getId());
+        if (viajeAsignado != null) {
+            Zona zonaOrigenViaje = viajeAsignado.getRutaZonas().get(0);
+            Zona zonaActualConductor = grafo.getZona(conductor.getZonaActualId());
+            List<Zona> rutaDeRecogida = gestorRutas.calcularRutaMasCorta(grafo, zonaActualConductor, zonaOrigenViaje);
+            conductor.setRutaAsignada(rutaDeRecogida);
+            System.out.println("[SIM-DEBUG] Ruta de recogida calculada y asignada. Tramos: " + (rutaDeRecogida != null ? rutaDeRecogida.size() : 0));
+        }
+    }
+
+    // Método de ayuda para encontrar el viaje activo. Esto es una simplificación.
+    private Viaje findActiveTripForConductor(int conductorId) {
+        // En un sistema real, tendrías una lista de viajes activos.
+        // Aquí, accedemos al viaje desde el mapaPanel, asumiendo que solo hay uno.
+        Viaje viajeActual = mainFrame.getRMapaPanel().getViajeActual();
+        if (viajeActual != null && viajeActual.getConductorId() != null && viajeActual.getConductorId() == conductorId) {
+            return viajeActual;
+        }
+        return null;
     }
 
     private void iniciarViajeAleatorio(Conductor conductor) {
@@ -123,5 +173,32 @@ public class SimuladorMovimientoConductores {
 
         // Inicia el tramo
         conductor.iniciarTramo(zonaActual, zonaDestino, duracionMs);
+    }
+
+    /**
+     * Inicia el siguiente tramo de la ruta de recogida asignada a un conductor.
+     */
+    private void iniciarSiguienteTramo(Conductor conductor) {
+        // Si el conductor ha llegado al final de su ruta de recogida, se detiene.
+        if (conductor.getRutaAsignada() != null && conductor.getZonaActualId() == conductor.getRutaAsignada().get(conductor.getRutaAsignada().size() - 1).getId()) {
+            System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al punto de recogida.");
+            conductor.setRutaAsignada(null); // Limpia la ruta, ya llegó.
+            return; // No inicia nuevo tramo.
+        }
+
+        List<Zona> ruta = conductor.getRutaAsignada();
+        if (ruta == null || ruta.isEmpty()) return;
+
+        Zona zonaActual = grafo.getZona(conductor.getZonaActualId());
+        int indiceActual = ruta.indexOf(zonaActual);
+
+        if (indiceActual != -1 && indiceActual < ruta.size() - 1) {
+            Zona siguienteZona = ruta.get(indiceActual + 1);
+            double distancia = grafo.getDistanciaEntre(zonaActual, siguienteZona);
+            long duracionMs = (long) ((distancia / VELOCIDAD_M_POR_S) * 1000);
+
+            System.out.println("[SIM] -> " + conductor.getNombreCompleto() + " yendo de " + zonaActual.getNombre() + " a " + siguienteZona.getNombre());
+            conductor.iniciarTramo(zonaActual, siguienteZona, duracionMs);
+        }
     }
 }
