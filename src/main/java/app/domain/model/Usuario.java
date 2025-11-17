@@ -21,6 +21,14 @@ public class Usuario {
         return username;
     }
 
+    /**
+     * Devuelve el nombre de usuario.
+     * @return el nombre de usuario.
+     */
+    public String getNombreUsuario() {
+        return username;
+    }
+
     public String getPasswordHash() {
         return passwordHash;
     }

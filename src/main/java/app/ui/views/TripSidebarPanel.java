@@ -364,6 +364,12 @@ public class TripSidebarPanel extends JPanel {
         
         conductorPanel.setVisible(true); // Mostramos el panel del conductor
     }
+    /**
+     * Oculta el botón de cancelar. Se usa cuando el conductor ha llegado al punto de recogida.
+     */
+    public void ocultarBotonCancelar() {
+        cancelarButton.setVisible(false);
+    }
 
     public void addSolicitarListener(ActionListener listener) {
         solicitarButton.addActionListener(listener);

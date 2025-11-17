@@ -5,13 +5,22 @@ import app.ui.MainFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 import java.sql.Connection;
+import java.sql.SQLException;
 
 public class Main {
 
     public static void main(String[] args) {
 
         // --- PASO 1: Conectar a la BD (Con verificación) ---
-        Connection dbConnection = ConexionBD.getInstance().getConnection();
+        Connection dbConnection = null;
+
+        try {
+            dbConnection = ConexionBD.getInstance().getConnection();
+        } catch (SQLException e) {
+            System.err.println("Error al obtener conexión con la BD: " + e.getMessage());
+            return; // o lo que necesites
+        }
+
 
         if (dbConnection == null) {
             System.err.println("Fallo crítico: No se pudo conectar a la base de datos.");

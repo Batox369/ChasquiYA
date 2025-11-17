@@ -11,6 +11,7 @@ import app.domain.model.Zona;
 import app.domain.repository.ConductorRepository;
 import app.domain.repository.GrafoRepository;
 import app.domain.service.GestorGrafos;
+import app.domain.service.GestorConductores;
 import app.domain.service.Sistema;
 import app.infrastructure.persistence.MySQLConductorRepository;
 import app.infrastructure.persistence.MySQLGrafoRepository;
@@ -329,6 +330,14 @@ public class AdminMenuPanel extends JPanel {
                         JOptionPane.INFORMATION_MESSAGE);
                 conductorNombreField.setText("");
                 conductorZoneSelector.setSelectedIndex(-1); // Limpiar selección
+
+                // --- ¡NUEVO! Recargar y actualizar el mapa con el nuevo conductor ---
+                // 1. Recargamos la lista de conductores desde la BD
+                GestorConductores gestorConductores = GestorConductores.getInstancia();
+                gestorConductores.cargarConductoresDesdeBD();
+
+                // 2. Notificamos al mapa para que se repinte con la lista actualizada
+                mainFrame.getRMapaPanel().actualizarConductores(gestorConductores.getConductores());
             } else {
                 JOptionPane.showMessageDialog(this, "Error al agregar el conductor. Verifique la consola para más detalles.", "Error", JOptionPane.ERROR_MESSAGE);
             }

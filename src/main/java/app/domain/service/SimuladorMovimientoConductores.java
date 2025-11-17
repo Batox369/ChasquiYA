@@ -91,12 +91,56 @@ public class SimuladorMovimientoConductores {
             // 1. Si el conductor no tiene un destino (está quieto en un nodo).
             if (conductor.getZonaDestinoViaje() == null) {
                 if (conductor.getEstado() == EstadoConductor.OCUPADO) {
-                    // Está OCUPADO y quieto: es el momento de calcular su ruta de recogida.
-                    if (conductor.getRutaAsignada() == null) {
-                        calcularYAsignarRutaDeRecogida(conductor);
+                    // --- ¡NUEVA MÁQUINA DE ESTADOS PARA VIAJE! ---
+                    switch (conductor.getTripPhase()) {
+                        case NONE:
+                            // Acaba de ser asignado. Calculamos ruta de recogida.
+                            if (conductor.getRutaAsignada() == null) {
+                                calcularYAsignarRutaDeRecogida(conductor);
+                            }
+                            // Si se pudo asignar ruta, inicia el movimiento.
+                            if (conductor.getRutaAsignada() != null) {
+                                conductor.setTripPhase(TripPhase.MOVING_TO_PICKUP);
+                                iniciarSiguienteTramo(conductor);
+                            }
+                            break;
+
+                        case WAITING_AT_PICKUP:
+                            // Está esperando al pasajero.
+                            long tiempoEsperaRecogida = tiempoActual - conductor.getWaitStartTimeMs();
+                            // Espera entre 5 y 8 segundos.
+                            if (tiempoEsperaRecogida > 5000 + random.nextInt(3000)) {
+                                System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " terminó de esperar. Iniciando viaje a destino.");
+                                // Asigna la ruta principal del viaje.
+                                Viaje viaje = findActiveTripForConductor(conductor.getId());
+                                if (viaje != null) {
+                                    conductor.setRutaAsignada(viaje.getRutaZonas());
+                                    conductor.setTripPhase(TripPhase.MOVING_TO_DESTINATION);
+                                    iniciarSiguienteTramo(conductor);
+                                }
+                            }
+                            break;
+
+                        case WAITING_AT_DESTINATION:
+                            // Acaba de dejar al pasajero.
+                            long tiempoEsperaDestino = tiempoActual - conductor.getWaitStartTimeMs();
+                            // Espera entre 5 y 8 segundos.
+                            if (tiempoEsperaDestino > 5000 + random.nextInt(3000)) {
+                                System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " terminó espera en destino. Vuelve a ciclo normal.");
+                                conductor.setEstado(EstadoConductor.DISPONIBLE);
+                                conductor.setTripPhase(TripPhase.NONE);
+                                // --- ¡MEJORA DE ARQUITECTURA! ---
+                                // El simulador ya no resetea el mapa. Solo notifica al MainFrame.
+                                mainFrame.onViajeCompletado(conductor.getId());
+                            }
+                            break;
+
+                        case MOVING_TO_PICKUP:
+                        case MOVING_TO_DESTINATION:
+                            // Estaba en movimiento y llegó a un nodo intermedio. Inicia el siguiente tramo.
+                            iniciarSiguienteTramo(conductor);
+                            break;
                     }
-                    // Una vez calculada (o si ya la tenía), inicia el siguiente tramo.
-                    iniciarSiguienteTramo(conductor);
                 } else {
                     // Está DISPONIBLE y quieto: inicia un viaje aleatorio.
                     iniciarViajeAleatorio(conductor);
@@ -118,7 +162,29 @@ public class SimuladorMovimientoConductores {
             if (progreso >= 1.0) {
                 // Ha llegado al final de un tramo.
                 Zona zonaAlcanzada = conductor.getZonaDestinoViaje();
-                conductor.setZonaActualId(zonaAlcanzada.getId());
+
+                // --- Lógica de llegada a un nodo ---
+                if (conductor.getEstado() == EstadoConductor.OCUPADO) {
+                    // Si está en la fase final de la recogida.
+                    if (conductor.getTripPhase() == TripPhase.MOVING_TO_PICKUP && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) {
+                        System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al punto de recogida.");
+                        conductor.setTripPhase(TripPhase.WAITING_AT_PICKUP);
+                        conductor.setWaitStartTimeMs(tiempoActual);
+                        conductor.setRutaAsignada(null); // Limpia la ruta de recogida.
+                    }
+                    // Si está en la fase final del viaje.
+                    else if (conductor.getTripPhase() == TripPhase.MOVING_TO_DESTINATION && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) {
+                        System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al destino final del viaje.");
+                        conductor.setTripPhase(TripPhase.WAITING_AT_DESTINATION);
+                        conductor.setWaitStartTimeMs(tiempoActual);
+                        conductor.setRutaAsignada(null); // Limpia la ruta del viaje.
+                    }
+                }
+
+                // Actualiza la posición y detiene el movimiento para la decisión del siguiente tick.
+                if (zonaAlcanzada != null) {
+                    conductor.setZonaActualId(zonaAlcanzada.getId());
+                }
                 conductor.setPosicionActual(new Coordenada(zonaAlcanzada.getLongitud(), zonaAlcanzada.getLatitud()));
                 conductor.iniciarTramo(zonaAlcanzada, null, 0); // Detiene el movimiento temporalmente.
 
@@ -179,15 +245,11 @@ public class SimuladorMovimientoConductores {
      * Inicia el siguiente tramo de la ruta de recogida asignada a un conductor.
      */
     private void iniciarSiguienteTramo(Conductor conductor) {
-        // Si el conductor ha llegado al final de su ruta de recogida, se detiene.
-        if (conductor.getRutaAsignada() != null && conductor.getZonaActualId() == conductor.getRutaAsignada().get(conductor.getRutaAsignada().size() - 1).getId()) {
-            System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al punto de recogida.");
-            conductor.setRutaAsignada(null); // Limpia la ruta, ya llegó.
-            return; // No inicia nuevo tramo.
-        }
-
         List<Zona> ruta = conductor.getRutaAsignada();
         if (ruta == null || ruta.isEmpty()) return;
+
+        // Si ya está en el destino final de la ruta actual, no hace nada.
+        if (esDestinoFinalDeRuta(conductor, grafo.getZona(conductor.getZonaActualId()))) return;
 
         Zona zonaActual = grafo.getZona(conductor.getZonaActualId());
         int indiceActual = ruta.indexOf(zonaActual);
@@ -200,5 +262,14 @@ public class SimuladorMovimientoConductores {
             System.out.println("[SIM] -> " + conductor.getNombreCompleto() + " yendo de " + zonaActual.getNombre() + " a " + siguienteZona.getNombre());
             conductor.iniciarTramo(zonaActual, siguienteZona, duracionMs);
         }
+    }
+
+    /**
+     * Comprueba si una zona es el destino final de la ruta asignada a un conductor.
+     */
+    private boolean esDestinoFinalDeRuta(Conductor conductor, Zona zona) {
+        List<Zona> ruta = conductor.getRutaAsignada();
+        if (ruta == null || ruta.isEmpty() || zona == null) return false;
+        return zona.getId() == ruta.get(ruta.size() - 1).getId();
     }
 }

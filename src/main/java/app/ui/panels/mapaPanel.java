@@ -1,6 +1,6 @@
 package app.ui.panels;
 
-import app.domain.model.Coordenada;
+import app.infrastructure.shared.SessionManager;
 import app.domain.model.Viaje;
 import app.domain.service.GestorConductores;
 import app.domain.service.GestorRutas;
@@ -40,6 +40,7 @@ public class mapaPanel{
     private MapMarker markerDestino;
     private Viaje viajeActual;
     private boolean isDragging = false;
+    private boolean isTripActive = false; // <-- NUEVO: Variable para controlar el estado del viaje
     private boolean mapaInicializado = false;
 
     private MainFrame mainFrame;
@@ -66,7 +67,11 @@ public class mapaPanel{
 
         // --- ¡NUEVO! Creamos e iniciamos el simulador ---
         // Le pasamos `mapaCanvas::repaint` como la acción a ejecutar en cada actualización.
-        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, this.grafoZonas, mapaCanvas::repaint);
+        Runnable updateAction = () -> {
+            checkTripStatusAndUpdateSidebar(); // Revisa el estado del viaje en cada tick
+            mapaCanvas.repaint();
+        };
+        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, this.grafoZonas, updateAction);
         this.simulador.start();
     }
     private void loadImage() {
@@ -181,6 +186,12 @@ public class mapaPanel{
     }
 
     private void handleMapClick(Point clickPoint) {
+        // --- ¡CORRECCIÓN! ---
+        // Si ya hay un viaje activo (solicitado), no hacemos nada al hacer clic.
+        if (isTripActive) {
+            return;
+        }
+
         // 1. Convertir clic de Pantalla -> a Coordenada de Imagen/Mundo
         double mundoX = (clickPoint.x - offsetX) / zoom;
         double mundoY = (clickPoint.y - offsetY) / zoom;
@@ -241,18 +252,24 @@ public class mapaPanel{
                 distanciaTotalRuta += grafoZonas.getDistanciaEntre(a, b);
             }
 
-            // 9. Crear el Viaje (con el constructor simple)
-            viajeActual = new Viaje(
-                    new Coordenada(zonaOrigen.getLongitud(), zonaOrigen.getLatitud()), // Coordenada X, Y del origen
-                    new Coordenada(zonaDestino.getLongitud(), zonaDestino.getLatitud()),
-                    zonaOrigen.getNombre(),
-                    zonaDestino.getNombre()// Coordenada X, Y del destino
-            );
+            // 9. Crear el Viaje
+            viajeActual = new Viaje(zonaOrigen, zonaDestino, zonaOrigen.getNombre(), zonaDestino.getNombre());
 
             // 10. Establecer la ruta y la distancia CALCULADA
             viajeActual.setRutaZonas(rutaActual);
-            // (Asumiendo tu factor de conversión de 1 peso = 10 metros, como en tu clase Viaje)
-            viajeActual.setDistanciaMetros(distanciaTotalRuta * 10);
+            viajeActual.setDistanciaMetros(distanciaTotalRuta); // El peso ya debería ser la distancia en metros
+
+            double tarifaBase = 5.0;
+            double costoPorKm = 2.5;
+            double distanciaKm = distanciaTotalRuta / 1000;
+
+            double precioCalculado = tarifaBase + (distanciaKm * costoPorKm);
+            viajeActual.setPrecio(precioCalculado);
+
+            Usuario usuarioActual = SessionManager.getCurrentUser();
+            if (usuarioActual != null) {
+                viajeActual.setUsuarioId(usuarioActual.getId());
+            }
 
             // 11. Actualizar la UI
             tripSidebar.actualizarViaje(viajeActual);
@@ -300,16 +317,6 @@ public class mapaPanel{
         return null; // El clic fue muy lejos de cualquier zona
     }
 
-
-    public void confirmarViaje() {
-        // Ya no se muestra un JOptionPane.
-        // Simplemente se confirma que el viaje ha sido solicitado.
-        if (viajeActual != null) {
-            System.out.println("Viaje solicitado: " + viajeActual.getNombreOrigen() + " -> " + viajeActual.getNombreDestino());
-            // En el futuro, aquí se podría llamar a un servicio para que asigne un conductor.
-        }
-    }
-
     public void resetearMapa() {
         markerOrigen = null;
         markerDestino = null;
@@ -319,12 +326,32 @@ public class mapaPanel{
         zonaDestino = null;
         rutaActual = null;
         viajeActual = null;
+        isTripActive = false; // <-- Reactivamos la selección de puntos
         tripSidebar.setEstadoSinViaje();
         // --- ¡NUEVO! ---
         // Notificamos al MainFrame que el viaje ha sido cancelado para que
         // pueda restaurar la barra de navegación principal.
         mainFrame.mostrarMapa();
         mapaCanvas.repaint();
+    }
+
+    private void checkTripStatusAndUpdateSidebar() {
+        if (viajeActual != null && viajeActual.getConductorId() != null) {
+            Conductor conductor = findConductorById(viajeActual.getConductorId());
+            if (conductor != null) {
+                // Si el conductor ha llegado a recoger al pasajero o está en una fase posterior,
+                // ocultamos el botón de cancelar.
+                if (conductor.getTripPhase() == TripPhase.WAITING_AT_PICKUP ||
+                    conductor.getTripPhase() == TripPhase.MOVING_TO_DESTINATION ||
+                    conductor.getTripPhase() == TripPhase.WAITING_AT_DESTINATION) {
+                    tripSidebar.ocultarBotonCancelar();
+                }
+            }
+        }
+    }
+
+    private Conductor findConductorById(int id) {
+        return conductores.stream().filter(c -> c.getId() == id).findFirst().orElse(null);
     }
 
     private void drawMap(Graphics g) {
@@ -459,5 +486,13 @@ public class mapaPanel{
 
     public Viaje getViajeActual() {
         return viajeActual;
+    }
+
+    /**
+     * Activa el estado de "viaje en curso", desactivando la selección de puntos en el mapa.
+     */
+    public void setTripActive() {
+        this.isTripActive = true;
+        mapaCanvas.setCursor(Cursor.getDefaultCursor()); // Cambia el cursor para indicar que no se puede interactuar
     }
 }

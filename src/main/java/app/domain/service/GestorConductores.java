@@ -48,4 +48,18 @@ public class GestorConductores {
     public List<Conductor> getConductores() {
         return conductores;
     }
+
+    /**
+     * Busca y devuelve un conductor por su ID.
+     * @param id El ID del conductor a buscar.
+     * @return El objeto Conductor si se encuentra, o null si no existe.
+     */
+    public Conductor getConductorPorId(int id) {
+        for (Conductor conductor : conductores) {
+            if (conductor.getId() == id) {
+                return conductor;
+            }
+        }
+        return null; // No se encontró el conductor
+    }
 }

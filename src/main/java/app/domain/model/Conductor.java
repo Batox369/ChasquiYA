@@ -18,6 +18,10 @@ public class Conductor {
     private long tiempoInicioViajeMs; // System.currentTimeMillis() al empezar un tramo
     private long duracionViajeMs;     // Duración total calculada para el tramo
 
+    // --- Atributos para el ciclo de vida del viaje ---
+    private TripPhase tripPhase = TripPhase.NONE;
+    private long waitStartTimeMs;
+    
     // --- Fin de atributos de simulación ---
 
 
@@ -111,6 +115,22 @@ public class Conductor {
         return duracionViajeMs;
     }
 
+    public TripPhase getTripPhase() {
+        return tripPhase;
+    }
+
+    public void setTripPhase(TripPhase tripPhase) {
+        this.tripPhase = tripPhase;
+    }
+
+    public long getWaitStartTimeMs() {
+        return waitStartTimeMs;
+    }
+
+    public void setWaitStartTimeMs(long waitStartTimeMs) {
+        this.waitStartTimeMs = waitStartTimeMs;
+    }
+    
     /**
      * Inicia un nuevo tramo de viaje entre dos zonas.
      * @param origen La zona de partida.

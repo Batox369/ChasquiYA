@@ -3,14 +3,19 @@ package app.domain.repository;
 import app.domain.model.Zona;
 import app.domain.model.GrafoZonas;
 import app.domain.service.MapUtils;
+import app.infrastructure.persistence.ConexionBD;
 
 import java.sql.*;
 
 public class ZonaRepository {
     private final Connection connection;
 
-    public ZonaRepository(Connection connection) {
-        this.connection = connection;
+    public ZonaRepository() {
+        try {
+            this.connection = ConexionBD.getInstance().getConnection();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error obteniendo conexión", e);
+        }
     }
 
     public GrafoZonas cargarGrafo(double anchoMapa, double altoMapa) {

@@ -1,7 +1,6 @@
 package app.ui;
 
-import app.domain.model.GrafoZonas;
-import app.domain.model.Zona;
+import app.domain.model.*;
 import app.domain.repository.ZonaRepository;
 import app.domain.service.*;
 import app.infrastructure.persistence.ConexionBD;
@@ -12,8 +11,7 @@ import app.ui.views.TopBar;
 import app.ui.views.TripSidebarPanel;
 
 import java.util.List;
-import app.domain.model.Conductor;
-import app.domain.model.Usuario;
+
 import app.domain.repository.UsuarioRepository;
 import app.infrastructure.persistence.MySQLUsuarioRepository;
 import app.infrastructure.shared.SessionManager;
@@ -46,7 +44,9 @@ public class MainFrame extends JFrame {
     private RegisterPanel registerPanel;
     private JPanel welcomePanel;
 
-    ZonaRepository repo = new ZonaRepository(ConexionBD.getInstance().getConnection());
+    ZonaRepository repo = new ZonaRepository();
+
+
 
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -138,11 +138,10 @@ public class MainFrame extends JFrame {
         initializePanels();
         setupListeners();
         topBar.setUserName(user.getUsername());
-        adminPanel.addVolverListener(e -> {
-            setContentPane(mainFrame);
-            revalidate();
-            repaint();
-        });
+
+        // Cargar el historial para el usuario que acaba de iniciar sesión
+        GestorHistorial.getInstancia().cargarHistorial(user);
+
         leftPanel.add(sideNav, BorderLayout.CENTER);
         mostrarMapa();
     }
@@ -177,7 +176,7 @@ public class MainFrame extends JFrame {
         panelMapa.getRootPanel().setCursor(Cursor.getDefaultCursor());
 
         // Volver al panel de Admin
-        mostrarAdminMenu();
+        mostrarMenuYPanel(adminPanel);
     }
 
     private void initializePanels() {
@@ -212,6 +211,7 @@ public class MainFrame extends JFrame {
             sideNav.setSelectedButton("solicitar");
         });
         sideNav.addHistorialListener(e -> {
+            historialPanel.actualizarVista(); // Asegura que la vista esté actualizada
             mostrarMenuYPanel(historialPanel);
             sideNav.setSelectedButton("historial");
         });
@@ -224,12 +224,22 @@ public class MainFrame extends JFrame {
             sideNav.setSelectedButton("perfil");
         });
         sideNav.addAdminListener(e -> {
-            mostrarMenuYPanel(adminPanel);
+            mostrarAdminMenu();
             sideNav.setSelectedButton("admin");
         });
         tripSidebar.addCancelarListener(e -> {
             // SIMPLIFICADO: Ahora solo necesitamos llamar a resetearMapa.
             // Este método se encargará de notificar al MainFrame para que muestre la SideNav.
+            Viaje viajeCancelado = panelMapa.getViajeActual();
+            if (viajeCancelado != null && viajeCancelado.getConductorId() != null) {
+                Conductor conductor = gestorConductores.getConductorPorId(viajeCancelado.getConductorId());
+                if (conductor != null) {
+                    System.out.println("[LOGIC] Viaje cancelado por el usuario. Conductor " + conductor.getNombreCompleto() + " vuelve a estado DISPONIBLE.");
+                    conductor.setEstado(EstadoConductor.DISPONIBLE);
+                    conductor.setTripPhase(TripPhase.NONE);
+                    conductor.setRutaAsignada(null);
+                }
+            }
             panelMapa.resetearMapa();
         });
         tripSidebar.addSolicitarListener(e -> {
@@ -259,6 +269,7 @@ public class MainFrame extends JFrame {
                 // Ya no calculamos la ruta aquí. Solo asignamos el viaje.
                 // El simulador se encargará de la ruta cuando el conductor esté listo.
                 viajeActual.setConductorId(conductorAsignado.getId()); // Guardamos el ID del conductor en el viaje
+                panelMapa.setTripActive(); // <-- ¡AQUÍ! Desactivamos los clics en el mapa
 
             } // (Opcional: podrías añadir un else para mostrar "No se encontraron conductores")
         });
@@ -299,9 +310,7 @@ public class MainFrame extends JFrame {
     }
 
     public void mostrarAdminMenu() {
-        setContentPane(adminPanel);
-        revalidate();
-        repaint();
+        mostrarMenuYPanel(adminPanel);
     }
 
     public boolean getmodoColocarZona(){
@@ -312,6 +321,29 @@ public class MainFrame extends JFrame {
         return panelMapa;
     }
 
+    /**
+     * Se llama cuando el simulador detecta que un viaje ha finalizado.
+     * Aquí se centraliza la lógica de negocio para guardar el viaje en el historial.
+     * @param conductorId El ID del conductor que completó el viaje.
+     */
+    public void onViajeCompletado(int conductorId) {
+        Viaje viajeCompletado = panelMapa.getViajeActual();
+
+        if (viajeCompletado != null && viajeCompletado.getConductorId() != null && viajeCompletado.getConductorId() == conductorId) {
+            System.out.println("[LOGIC] Viaje completado. Guardando en el historial...");
+            // --- ¡CORRECCIÓN! ---
+            // Obtenemos el usuario desde el SessionManager para asegurar la consistencia.
+            viajeCompletado.setUsuarioId(SessionManager.getCurrentUser().getId());
+            GestorHistorial.getInstancia().guardarViaje(viajeCompletado);
+            historialPanel.refrescarHistorial();
+
+        } else {
+            System.err.println("[ERROR] Se intentó completar un viaje, pero no se encontró el viaje activo correspondiente.");
+        }
+
+        // Finalmente, reseteamos el mapa para dejarlo listo para el siguiente viaje.
+        panelMapa.resetearMapa();
+    }
 
     public JPanel getMapaPanel() {
         if (selectedPanel == null) {
