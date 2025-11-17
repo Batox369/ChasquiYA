@@ -248,8 +248,17 @@ public class SimuladorMovimientoConductores {
         List<Zona> ruta = conductor.getRutaAsignada();
         if (ruta == null || ruta.isEmpty()) return;
 
-        // Si ya está en el destino final de la ruta actual, no hace nada.
-        if (esDestinoFinalDeRuta(conductor, grafo.getZona(conductor.getZonaActualId()))) return;
+        // --- ¡CORRECCIÓN CLAVE! ---
+        // Si el conductor ya está en el destino final de su ruta asignada (p.ej. la ruta de recogida es de 1 solo punto).
+        if (esDestinoFinalDeRuta(conductor, grafo.getZona(conductor.getZonaActualId()))) {
+            // Si la fase es ir a recoger, significa que ya llegó. Pasa a la siguiente fase.
+            if (conductor.getTripPhase() == TripPhase.MOVING_TO_PICKUP) {
+                System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ya está en el punto de recogida. Iniciando espera.");
+                conductor.setTripPhase(TripPhase.WAITING_AT_PICKUP);
+                conductor.setWaitStartTimeMs(System.currentTimeMillis());
+            }
+            return; // No inicia ningún tramo de movimiento.
+        }
 
         Zona zonaActual = grafo.getZona(conductor.getZonaActualId());
         int indiceActual = ruta.indexOf(zonaActual);

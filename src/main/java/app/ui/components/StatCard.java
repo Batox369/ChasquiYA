@@ -6,6 +6,8 @@ import java.awt.*;
 
 public class StatCard extends JPanel {
 
+    private JLabel valueLabel; // <-- 1. Convertir en miembro de la clase
+
     public StatCard(String title, String value, String icon, Color accentColor) {
         setLayout(new GridBagLayout());
         setBackground(Colors.CARD_BG);
@@ -28,7 +30,7 @@ public class StatCard extends JPanel {
         titleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
         titleLabel.setForeground(Colors.TEXT_SECONDARY);
 
-        JLabel valueLabel = new JLabel(value);
+        valueLabel = new JLabel(value); // <-- 2. Inicializar el miembro de la clase
         valueLabel.setFont(new Font("Segoe UI", Font.BOLD, 32));
         valueLabel.setForeground(Colors.TEXT_PRIMARY);
 
@@ -49,5 +51,12 @@ public class StatCard extends JPanel {
         // Texto en la columna 1
         gbc.gridx = 1;
         add(textPanel, gbc);
+    }
+
+    /**
+     * Actualiza el valor mostrado en la tarjeta de estadística.
+     */
+    public void setValue(String value) {
+        this.valueLabel.setText(value);
     }
 }

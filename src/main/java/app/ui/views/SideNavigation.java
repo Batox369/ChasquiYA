@@ -11,7 +11,6 @@ public class SideNavigation extends JPanel {
 
     private ModernButton solicitarViajeBtn;
     private ModernButton historialBtn;
-    private ModernButton configuracionBtn;
     private ModernButton perfilBtn;
 
     // Componentes para la sección de administrador
@@ -37,7 +36,6 @@ public class SideNavigation extends JPanel {
 
         solicitarViajeBtn = new ModernButton("Solicitar Viaje", "🚗");
         historialBtn = new ModernButton("Historial", "📜");
-        configuracionBtn = new ModernButton("Configuración", "⚙️");
         perfilBtn = new ModernButton("Mi Perfil", "👤");
 
 
@@ -46,8 +44,6 @@ public class SideNavigation extends JPanel {
         add(solicitarViajeBtn);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(historialBtn);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        add(configuracionBtn);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(perfilBtn);
         add(Box.createVerticalGlue());
@@ -81,10 +77,6 @@ public class SideNavigation extends JPanel {
         historialBtn.addActionListener(listener);
     }
 
-    public void addConfiguracionListener(ActionListener listener) {
-        configuracionBtn.addActionListener(listener);
-    }
-
     public void addPerfilListener(ActionListener listener) {
         perfilBtn.addActionListener(listener);
     }
@@ -96,7 +88,6 @@ public class SideNavigation extends JPanel {
     public void setSelectedButton(String buttonName) {
         solicitarViajeBtn.setSelected(false);
         historialBtn.setSelected(false);
-        configuracionBtn.setSelected(false);
         perfilBtn.setSelected(false);
         adminBtn.setSelected(false);
 
@@ -106,9 +97,6 @@ public class SideNavigation extends JPanel {
                 break;
             case "historial":
                 historialBtn.setSelected(true);
-                break;
-            case "configuracion":
-                configuracionBtn.setSelected(true);
                 break;
             case "perfil":
                 perfilBtn.setSelected(true);

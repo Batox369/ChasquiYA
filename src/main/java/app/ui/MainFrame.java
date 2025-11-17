@@ -30,10 +30,10 @@ public class MainFrame extends JFrame {
     private AsignadorDeViajes asignadorDeViajes;
     private SideNavigation sideNav;
     private TripSidebarPanel tripSidebar;
-    private mapaPanel panelMapa;    private Sistema sistema;
+    private mapaPanel panelMapa;
+    private Sistema sistema;
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
-    private ConfiguracionPanel configuracionPanel;
     private PerfilPanel perfilPanel;
     private AdminMenuPanel adminPanel;
 
@@ -139,9 +139,6 @@ public class MainFrame extends JFrame {
         setupListeners();
         topBar.setUserName(user.getUsername());
 
-        // Cargar el historial para el usuario que acaba de iniciar sesión
-        GestorHistorial.getInstancia().cargarHistorial(user);
-
         leftPanel.add(sideNav, BorderLayout.CENTER);
         mostrarMapa();
     }
@@ -200,7 +197,6 @@ public class MainFrame extends JFrame {
         
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
-        configuracionPanel = new ConfiguracionPanel();
         perfilPanel = new PerfilPanel(this);
         adminPanel = new AdminMenuPanel(this);
     }
@@ -211,15 +207,13 @@ public class MainFrame extends JFrame {
             sideNav.setSelectedButton("solicitar");
         });
         sideNav.addHistorialListener(e -> {
-            historialPanel.actualizarVista(); // Asegura que la vista esté actualizada
+            Usuario u = SessionManager.getCurrentUser();
+            cargarHistorialAsincrono(u);
             mostrarMenuYPanel(historialPanel);
             sideNav.setSelectedButton("historial");
         });
-        sideNav.addConfiguracionListener(e -> {
-            mostrarMenuYPanel(configuracionPanel);
-            sideNav.setSelectedButton("configuracion");
-        });
         sideNav.addPerfilListener(e -> {
+            perfilPanel.actualizarEstadisticas(); // <-- ¡AQUÍ! Actualizamos los datos antes de mostrar
             mostrarMenuYPanel(perfilPanel);
             sideNav.setSelectedButton("perfil");
         });
@@ -344,11 +338,26 @@ public class MainFrame extends JFrame {
         // Finalmente, reseteamos el mapa para dejarlo listo para el siguiente viaje.
         panelMapa.resetearMapa();
     }
+    public void cargarHistorialAsincrono(Usuario usuario) {
 
-    public JPanel getMapaPanel() {
-        if (selectedPanel == null) {
-            System.err.println("Advertencia: Se llamó a getMapaPanel() antes de inicializar panelMapa.");
-        }
-        return selectedPanel;
+        historialPanel.mostrarLoading();  // mensaje temporal
+        SwingWorker<Void, Void> worker = new SwingWorker<>() {
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Carga pesada en un hilo diferente al EDT
+                GestorHistorial.getInstancia().cargarHistorial(usuario);
+                return null;
+            }
+            @Override
+            protected void done() {
+                // Cuando termina, vuelve al hilo gráfico
+                historialPanel.ocultarLoading();
+                historialPanel.refrescarHistorial();
+            }
+        };
+
+        worker.execute();
     }
+
 }

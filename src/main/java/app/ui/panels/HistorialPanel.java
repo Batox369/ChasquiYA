@@ -4,7 +4,6 @@ import app.domain.model.Viaje;
 import app.domain.service.GestorHistorial;
 import app.domain.structures.ListaEnlazadaSimple;
 import app.domain.structures.Nodo;
-import app.infrastructure.shared.SessionManager;
 import app.ui.components.ModernScrollBarUI;
 import app.infrastructure.shared.constants.Colors;
 
@@ -16,6 +15,7 @@ import java.text.SimpleDateFormat;
 public class HistorialPanel extends JPanel {
 
     private JPanel listPanel;
+    private JLabel estadoLabel;  // ⬅ NUEVO
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy 'a las' HH:mm");
 
     public HistorialPanel() {
@@ -27,8 +27,13 @@ public class HistorialPanel extends JPanel {
         JLabel titleLabel = new JLabel("Historial de Viajes");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
         titleLabel.setForeground(Colors.TEXT_PRIMARY);
-        titleLabel.setHorizontalAlignment(SwingConstants.LEFT);
         add(titleLabel, BorderLayout.NORTH);
+
+        // Mensaje de estado (loading)
+        estadoLabel = new JLabel("");
+        estadoLabel.setFont(new Font("Segoe UI", Font.PLAIN, 14));
+        estadoLabel.setForeground(Colors.TEXT_SECONDARY);
+        add(estadoLabel, BorderLayout.SOUTH);
 
         // Panel para la lista con scroll
         listPanel = new JPanel();
@@ -45,15 +50,20 @@ public class HistorialPanel extends JPanel {
         add(scrollPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Solo actualiza la vista. La recarga desde BD se hace ASINCRÓNICAMENTE desde MainFrame.
+     */
     public void refrescarHistorial() {
-        // 1. Recargar historial desde BD
-        GestorHistorial gestor = GestorHistorial.getInstancia();
-        gestor.cargarHistorial(SessionManager.getCurrentUser());
-
-        // 2. Volver a dibujar la UI
         actualizarVista();
     }
 
+    public void mostrarLoading() {
+        estadoLabel.setText("Cargando historial...");
+    }
+
+    public void ocultarLoading() {
+        estadoLabel.setText("");
+    }
 
     public void actualizarVista() {
         listPanel.removeAll();
@@ -62,15 +72,15 @@ public class HistorialPanel extends JPanel {
         Nodo<Viaje> actual = historial.getCabeza();
 
         if (actual == null) {
-            // Mostrar mensaje si no hay viajes
             JLabel emptyLabel = new JLabel("Aún no has realizado ningún viaje.", SwingConstants.CENTER);
             emptyLabel.setFont(new Font("Segoe UI", Font.ITALIC, 16));
             emptyLabel.setForeground(Colors.TEXT_SECONDARY);
+
             listPanel.setLayout(new BorderLayout());
             listPanel.add(emptyLabel, BorderLayout.CENTER);
         } else {
             listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-            // Recorremos la lista enlazada simple
+
             while (actual != null) {
                 listPanel.add(createTripCard(actual.dato));
                 listPanel.add(Box.createRigidArea(new Dimension(0, 15)));
@@ -91,7 +101,6 @@ public class HistorialPanel extends JPanel {
         ));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
 
-        // Panel de información (Origen, Destino, Fecha)
         JPanel infoPanel = new JPanel();
         infoPanel.setLayout(new BoxLayout(infoPanel, BoxLayout.Y_AXIS));
         infoPanel.setOpaque(false);
@@ -108,7 +117,6 @@ public class HistorialPanel extends JPanel {
         infoPanel.add(Box.createRigidArea(new Dimension(0, 5)));
         infoPanel.add(dateLabel);
 
-        // Panel de precio
         JLabel priceLabel = new JLabel(String.format("S/ %.2f", viaje.getPrecio()));
         priceLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         priceLabel.setForeground(Colors.SUCCESS);
