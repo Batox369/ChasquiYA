@@ -50,7 +50,7 @@ public class MainFrame extends JFrame {
 
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1122, 704);
+        setSize(1022, 704);
         setLocationRelativeTo(null);
         setResizable(false);
         setTitle("Sistema de Viajes");
@@ -81,7 +81,7 @@ public class MainFrame extends JFrame {
         // ... (Tu código de initializeLayout() sin cambios) ...
         mainFrame = new JPanel(new BorderLayout());
         mainFrame.setBackground(Colors.SECONDARY);
-        topBar = new TopBar("ChasquiYa", "Invitado");
+        topBar = new TopBar();
         mainFrame.add(topBar, BorderLayout.NORTH);
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setBackground(Colors.SECONDARY);

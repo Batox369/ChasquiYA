@@ -34,9 +34,11 @@ public class SideNavigation extends JPanel {
         navTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 15, 0));
         add(navTitle);
 
-        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "🚗");
-        historialBtn = new ModernButton("Historial", "📜");
-        perfilBtn = new ModernButton("Mi Perfil", "👤");
+        // --- ¡CORRECCIÓN! Usamos las rutas a las imágenes en lugar de emojis ---
+        // --- ¡CORRECCIÓN DE RUTA! --- Se quita la barra inicial '/'
+        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "coche.png");
+        historialBtn = new ModernButton("Historial", "reloj.png");
+        perfilBtn = new ModernButton("Mi Perfil", "user.png");
 
 
         solicitarViajeBtn.setSelected(true);
@@ -59,7 +61,7 @@ public class SideNavigation extends JPanel {
         adminTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         adminTitle.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 0));
 
-        adminBtn = new ModernButton("Panel de Control", "🛠️");
+        adminBtn = new ModernButton("Panel de Control", "ajustes.png");
 
         add(adminSeparator);
         add(adminTitle);
