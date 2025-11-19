@@ -11,7 +11,6 @@ public class SideNavigation extends JPanel {
 
     private ModernButton solicitarViajeBtn;
     private ModernButton historialBtn;
-    private ModernButton configuracionBtn;
     private ModernButton perfilBtn;
 
     // Componentes para la sección de administrador
@@ -35,10 +34,11 @@ public class SideNavigation extends JPanel {
         navTitle.setBorder(BorderFactory.createEmptyBorder(0, 15, 15, 0));
         add(navTitle);
 
-        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "🚗");
-        historialBtn = new ModernButton("Historial", "📜");
-        configuracionBtn = new ModernButton("Configuración", "⚙️");
-        perfilBtn = new ModernButton("Mi Perfil", "👤");
+        // --- ¡CORRECCIÓN! Usamos las rutas a las imágenes en lugar de emojis ---
+        // --- ¡CORRECCIÓN DE RUTA! --- Se quita la barra inicial '/'
+        solicitarViajeBtn = new ModernButton("Solicitar Viaje", "coche.png");
+        historialBtn = new ModernButton("Historial", "reloj.png");
+        perfilBtn = new ModernButton("Mi Perfil", "user.png");
 
 
         solicitarViajeBtn.setSelected(true);
@@ -46,8 +46,6 @@ public class SideNavigation extends JPanel {
         add(solicitarViajeBtn);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(historialBtn);
-        add(Box.createRigidArea(new Dimension(0, 10)));
-        add(configuracionBtn);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(perfilBtn);
         add(Box.createVerticalGlue());
@@ -63,7 +61,7 @@ public class SideNavigation extends JPanel {
         adminTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
         adminTitle.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 0));
 
-        adminBtn = new ModernButton("Panel de Control", "🛠️");
+        adminBtn = new ModernButton("Panel de Control", "ajustes.png");
 
         add(adminSeparator);
         add(adminTitle);
@@ -81,10 +79,6 @@ public class SideNavigation extends JPanel {
         historialBtn.addActionListener(listener);
     }
 
-    public void addConfiguracionListener(ActionListener listener) {
-        configuracionBtn.addActionListener(listener);
-    }
-
     public void addPerfilListener(ActionListener listener) {
         perfilBtn.addActionListener(listener);
     }
@@ -96,7 +90,6 @@ public class SideNavigation extends JPanel {
     public void setSelectedButton(String buttonName) {
         solicitarViajeBtn.setSelected(false);
         historialBtn.setSelected(false);
-        configuracionBtn.setSelected(false);
         perfilBtn.setSelected(false);
         adminBtn.setSelected(false);
 
@@ -106,9 +99,6 @@ public class SideNavigation extends JPanel {
                 break;
             case "historial":
                 historialBtn.setSelected(true);
-                break;
-            case "configuracion":
-                configuracionBtn.setSelected(true);
                 break;
             case "perfil":
                 perfilBtn.setSelected(true);

@@ -36,7 +36,7 @@ public class CircularList {
         Node prev = tail;
         Node cur = tail.next;
         for (int i = 0; i < size; i++) {
-            if (cur.data.getNombre().equalsIgnoreCase(nombre)) {
+            if (cur.data.getNombreCompleto().equalsIgnoreCase(nombre)) {
                 if (size == 1) {
                     tail = null;
                 } else {
@@ -69,7 +69,7 @@ public class CircularList {
         StringBuilder sb = new StringBuilder();
         Node cur = tail.next;
         for (int i = 0; i < size; i++) {
-            sb.append(cur.data.getNombre());
+            sb.append(cur.data.getNombreCompleto());
             if (i < size - 1) sb.append(" -> ");
             cur = cur.next;
         }

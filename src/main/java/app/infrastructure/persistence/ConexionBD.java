@@ -14,22 +14,18 @@ public class ConexionBD {
     private static final String URL = "jdbc:mysql://" + HOST_CON_PUERTO + "/" + DATABASE_NAME;
 
     private static ConexionBD instance;
-    private Connection connection;
 
+    // Constructor privado (SINGLETON)
     private ConexionBD() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
-            this.connection = DriverManager.getConnection(URL, USER, PASSWORD);
-            System.out.println("✅ Conexión a la BD de Vultam (" + DATABASE_NAME + ") exitosa.");
+            System.out.println("Driver JDBC cargado");
         } catch (ClassNotFoundException e) {
-            System.err.println("Error: Driver JDBC no encontrado. (¿Falta en pom.xml?)");
-            e.printStackTrace();
-        } catch (SQLException e) {
-            System.err.println("Error al conectar a la base de datos de Vultam.");
             e.printStackTrace();
         }
     }
 
+    // Punto único de acceso (SINGLETON)
     public static synchronized ConexionBD getInstance() {
         if (instance == null) {
             instance = new ConexionBD();
@@ -37,18 +33,10 @@ public class ConexionBD {
         return instance;
     }
 
-    public Connection getConnection() {
-        return connection;
-    }
-
-    public void closeConnection() {
-        try {
-            if (connection != null && !connection.isClosed()) {
-                connection.close();
-                System.out.println("Conexión a la BD cerrada.");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    // ❌ YA NO guarda la conexión adentro
+    // ✔ Crea una NUEVA conexión cada vez que se llame
+    public Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 }
+

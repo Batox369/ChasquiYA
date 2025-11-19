@@ -1,7 +1,7 @@
 package app.domain.model;
 
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Date;
 
 public class Viaje {
     // === Campos de la base de datos ===
@@ -9,44 +9,47 @@ public class Viaje {
     private String estado;
     private int clienteId;
     private Integer conductorId;
-    private int zonaOrigenId;
-    private int zonaDestinoId;
-    private LocalDateTime fechaSolicitud;
-    private LocalDateTime fechaCompletado;
+    private int usuarioId; // Para el historial
+    private double precio; // Para el historial
+    private int zonaOrigenId; // <-- NUEVO
+    private int zonaDestinoId; // <-- NUEVO
+    private Date fecha; // Para el historial
 
     // === Campos del modelo ===
     private Coordenada origen;
     private Coordenada destino;
+    private String nombreOrigen;
+    private String nombreDestino;
     private double distanciaMetros;
     private List<Zona> rutaZonas; // 🔹 Nueva propiedad: secuencia de zonas
 
     // === Constructor principal ===
-    public Viaje(Coordenada origen, Coordenada destino) {
-        this.origen = origen;
-        this.destino = destino;
-        this.distanciaMetros = 0.0;
+    public Viaje(Zona origen, Zona destino, String nombreOrigen, String nombreDestino) {
+        // --- ¡CORRECCIÓN! ---
+        // Se crea una nueva instancia de Coordenada a partir de los datos de la Zona.
+        this.origen = new Coordenada(origen.getLongitud(), origen.getLatitud());
+        this.destino = new Coordenada(destino.getLongitud(), destino.getLatitud());
+        this.nombreOrigen = nombreOrigen;
+        this.nombreDestino = nombreDestino;
+        this.zonaOrigenId = origen.getId(); // Ahora es seguro y directo
+        this.zonaDestinoId = destino.getId(); // Ahora es seguro y directo
         this.estado = "PENDIENTE";
-        this.fechaSolicitud = LocalDateTime.now();
+        this.fecha = new Date();
     }
 
-    // === Constructor extendido (desde BD) ===
-    public Viaje(long id, String estado, int clienteId, Integer conductorId,
-                 int zonaOrigenId, int zonaDestinoId,
-                 LocalDateTime fechaSolicitud, LocalDateTime fechaCompletado,
-                 Coordenada origen, Coordenada destino, List<Zona> rutaZonas) {
-
-        this.id = id;
-        this.estado = estado;
-        this.clienteId = clienteId;
-        this.conductorId = conductorId;
-        this.zonaOrigenId = zonaOrigenId;
-        this.zonaDestinoId = zonaDestinoId;
-        this.fechaSolicitud = fechaSolicitud;
-        this.fechaCompletado = fechaCompletado;
-        this.origen = origen;
-        this.destino = destino;
-        this.rutaZonas = rutaZonas;
-        this.distanciaMetros = 0.0;
+    public Viaje(int idOrigen, String nombreOrigen, double lonOrigen, double latOrigen,
+                 int idDestino, String nombreDestino, double lonDestino, double latDestino,
+                 double distanciaMetros) {
+        // --- ¡CORRECCIÓN! ---
+        // Se instancia el tipo correcto 'Coordenada' en lugar de 'Zona'.
+        this.fecha = new Date();
+        this.origen = new Coordenada(lonOrigen, latOrigen);
+        this.destino = new Coordenada(lonDestino, latDestino);
+        this.nombreOrigen = nombreOrigen;
+        this.nombreDestino = nombreDestino;
+        this.zonaOrigenId = idOrigen;
+        this.zonaDestinoId = idDestino;
+        this.distanciaMetros = distanciaMetros; // <-- ¡CORRECCIÓN! Asegurarse de que se asigna.
     }
 
     // === Métodos auxiliares existentes ===
@@ -77,6 +80,9 @@ public class Viaje {
     public int getClienteId() { return clienteId; }
     public void setClienteId(int clienteId) { this.clienteId = clienteId; }
 
+    public int getUsuarioId() { return usuarioId; }
+    public void setUsuarioId(int usuarioId) { this.usuarioId = usuarioId; }
+
     public Integer getConductorId() { return conductorId; }
     public void setConductorId(Integer conductorId) { this.conductorId = conductorId; }
 
@@ -86,12 +92,6 @@ public class Viaje {
     public int getZonaDestinoId() { return zonaDestinoId; }
     public void setZonaDestinoId(int zonaDestinoId) { this.zonaDestinoId = zonaDestinoId; }
 
-    public LocalDateTime getFechaSolicitud() { return fechaSolicitud; }
-    public void setFechaSolicitud(LocalDateTime fechaSolicitud) { this.fechaSolicitud = fechaSolicitud; }
-
-    public LocalDateTime getFechaCompletado() { return fechaCompletado; }
-    public void setFechaCompletado(LocalDateTime fechaCompletado) { this.fechaCompletado = fechaCompletado; }
-
     public Coordenada getOrigen() { return origen; }
     public void setOrigen(Coordenada origen) { this.origen = origen; }
 
@@ -100,4 +100,16 @@ public class Viaje {
 
     public double getDistanciaMetros() { return distanciaMetros; }
     public void setDistanciaMetros(double distanciaMetros) { this.distanciaMetros = distanciaMetros; }
+
+    public String getNombreOrigen() { return nombreOrigen; }
+    public void setNombreOrigen(String nombreOrigen) { this.nombreOrigen = nombreOrigen; }
+
+    public String getNombreDestino() { return nombreDestino; }
+    public void setNombreDestino(String nombreDestino) { this.nombreDestino = nombreDestino; }
+
+    public double getPrecio() { return precio; }
+    public void setPrecio(double precio) { this.precio = precio; }
+
+    public Date getFecha() { return fecha; }
+    public void setFecha(Date fecha) { this.fecha = fecha; }
 }

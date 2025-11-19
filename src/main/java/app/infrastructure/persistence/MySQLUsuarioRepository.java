@@ -14,11 +14,16 @@ import java.util.List;
 
 public class MySQLUsuarioRepository implements UsuarioRepository {
 
-    private final Connection connection;
+    private Connection connection;
 
     public MySQLUsuarioRepository() {
-        // Obtiene la conexión del Singleton
-        this.connection = ConexionBD.getInstance().getConnection();
+        this.connection = null;
+
+        try {
+            this.connection = ConexionBD.getInstance().getConnection();
+        } catch (SQLException e) {
+            System.err.println("Error al obtener conexión con la BD: " + e.getMessage());
+        }
     }
 
     @Override

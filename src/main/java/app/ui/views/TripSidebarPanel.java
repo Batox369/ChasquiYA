@@ -20,6 +20,8 @@ public class TripSidebarPanel extends JPanel {
     private JPanel precioPanel;
     private JButton solicitarButton;
     private JButton cancelarButton;
+    private JPanel asignandoPanel; // <-- NUEVO: Panel para el estado "Asignando"
+    private JPanel conductorPanel; // <-- NUEVO: Panel para mostrar al conductor asignado
 
     private Viaje viajeActual;
 
@@ -41,9 +43,13 @@ public class TripSidebarPanel extends JPanel {
         createTripInfoSection();
         add(Box.createRigidArea(new Dimension(0, 20)));
 
-        createActionButtons();
+        createConductorPanel(); // <-- NUEVO y REUBICADO
+
+        createAsignandoPanel(); // <-- NUEVO: Crear el panel de "Asignando"
 
         add(Box.createVerticalGlue());
+
+        createActionButtons();
 
         setEstadoSinViaje();
     }
@@ -218,16 +224,64 @@ public class TripSidebarPanel extends JPanel {
         add(cancelarButton);
     }
 
+    /**
+     * Crea el panel que muestra la información del conductor asignado.
+     * Inicialmente está oculto.
+     */
+    private void createConductorPanel() {
+        // --- ¡CORREGIDO! Reutilizamos el estilo del panel de información del viaje ---
+        conductorPanel = new JPanel(); // Este será el contenedor principal
+        conductorPanel.setLayout(new BoxLayout(conductorPanel, BoxLayout.Y_AXIS));
+        conductorPanel.setBackground(Colors.SECONDARY);
+        conductorPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Colors.BORDER, 1),
+                BorderFactory.createEmptyBorder(12, 12, 12, 12)
+        ));
+        conductorPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        conductorPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
+
+        // Reutilizamos el método createInfoLabel para mantener la consistencia
+        JPanel nombrePanel = createInfoLabel("👤 Conductor", "...");
+        conductorPanel.add(nombrePanel);
+        conductorPanel.add(Box.createRigidArea(new Dimension(0, 8)));
+
+        JPanel placaPanel = createInfoLabel("    Placa", "...");
+        conductorPanel.add(placaPanel);
+
+        conductorPanel.setVisible(false); // Oculto por defecto
+        add(conductorPanel);
+    }
+    /**
+     * Crea el panel que se muestra mientras se asigna un conductor.
+     * Inicialmente está oculto.
+     */
+    private void createAsignandoPanel() {
+        asignandoPanel = new JPanel();
+        asignandoPanel.setLayout(new BoxLayout(asignandoPanel, BoxLayout.Y_AXIS));
+        asignandoPanel.setOpaque(false);
+        asignandoPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        asignandoPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+
+        JLabel asignandoLabel = new JLabel("Asignando conductor...");
+        asignandoLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        asignandoLabel.setForeground(Colors.SUCCESS);
+        asignandoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        asignandoPanel.add(asignandoLabel);
+        asignandoPanel.setVisible(false); // Oculto por defecto
+        add(asignandoPanel);
+    }
+
     public void actualizarViaje(Viaje viaje) {
         this.viajeActual = viaje;
 
         Coordenada origen = viaje.getOrigen();
         Coordenada destino = viaje.getDestino();
 
-        origenLabel.setText(String.format("(%.0f, %.0f)", origen.getX(), origen.getY()));
+        origenLabel.setText(viaje.getNombreOrigen());
         origenLabel.setForeground(Colors.SUCCESS);
 
-        destinoLabel.setText(String.format("(%.0f, %.0f)", destino.getX(), destino.getY()));
+        destinoLabel.setText(viaje.getNombreDestino());
         destinoLabel.setForeground(Colors.ERROR);
 
         updateInfoValue(distanciaPanel, viaje.getDistanciaFormateada());
@@ -273,7 +327,48 @@ public class TripSidebarPanel extends JPanel {
         updateInfoValue(precioPanel, "S/ --");
 
         solicitarButton.setEnabled(false);
+
+        // --- ¡CORRECCIÓN! ---
+        // Nos aseguramos de que el estado "Asignando..." se revierta.
+        solicitarButton.setVisible(true);
+        asignandoPanel.setVisible(false);
+        conductorPanel.setVisible(false); // Ocultamos también el panel del conductor
+
         viajeActual = null;
+    }
+
+    /**
+     * Cambia la vista del panel al estado "Asignando Conductor".
+     * Oculta los detalles del viaje y el botón de solicitar,
+     * y muestra el mensaje de asignación.
+     */
+    public void setEstadoAsignandoConductor() {
+        // --- CORRECCIÓN ---
+        // Ya no ocultamos la información del viaje. El usuario debe seguir viéndola.
+        // Solo ocultamos el botón de solicitar y mostramos el estado de asignación.
+        solicitarButton.setVisible(false);
+
+        asignandoPanel.setVisible(true);
+    }
+
+    /**
+     * Muestra la información del conductor que ha sido asignado al viaje.
+     * @param conductor El conductor asignado.
+     */
+    public void mostrarConductorAsignado(app.domain.model.Conductor conductor) {
+        asignandoPanel.setVisible(false); // Ocultamos "Asignando..."
+
+        // Actualizamos los valores usando el mismo método que para el resto de la info
+        updateInfoValue((JPanel) conductorPanel.getComponent(0), conductor.getNombreCompleto());
+        updateInfoValue((JPanel) conductorPanel.getComponent(2), conductor.getPlacaVehiculo());
+        
+        conductorPanel.setVisible(true); // Mostramos el panel del conductor
+    }
+    /**
+     * Oculta el botón de cancelar. Se usa cuando el conductor ha llegado al punto de recogida.
+     */
+    public void ocultarBotonCancelar() {
+        cancelarButton.setVisible(false);
     }
 
     public void addSolicitarListener(ActionListener listener) {

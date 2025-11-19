@@ -11,19 +11,14 @@ import java.util.List;
 
 public class MySQLGrafoRepository implements GrafoRepository {
 
-    private final Connection connection;
-
-    public MySQLGrafoRepository() {
-        // Obtiene la conexión del Singleton
-        this.connection = ConexionBD.getInstance().getConnection();
-    }
-
     @Override
     public List<Zona> getTodasLasZonas() {
         List<Zona> zonas = new ArrayList<>();
         String sql = "SELECT id, nombre, latitud, longitud FROM zonas";
 
-        try (Statement stmt = connection.createStatement();
+        // --- ¡CORRECCIÓN! ---
+        // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
+        try (Statement stmt = ConexionBD.getInstance().getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
@@ -45,7 +40,8 @@ public class MySQLGrafoRepository implements GrafoRepository {
         List<Arista> aristas = new ArrayList<>();
         String sql = "SELECT zona_origen_id, zona_destino_id, peso FROM zona_adyacencia";
 
-        try (Statement stmt = connection.createStatement();
+        // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
+        try (Statement stmt = ConexionBD.getInstance().getConnection().createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
@@ -64,7 +60,8 @@ public class MySQLGrafoRepository implements GrafoRepository {
     @Override
     public boolean addZona(String nombre, double x, double y) {
         String sql = "INSERT INTO zonas (nombre, longitud, latitud) VALUES (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
+        try (PreparedStatement ps = ConexionBD.getInstance().getConnection().prepareStatement(sql)) {
             ps.setString(1, nombre);
             ps.setDouble(2, x); // Longitud = X (DOUBLE)
             ps.setDouble(3, y); // Latitud = Y (DOUBLE)
@@ -80,7 +77,8 @@ public class MySQLGrafoRepository implements GrafoRepository {
     public boolean addConexion(int idZonaA, int idZonaB, double peso) {
         // Inserta la conexión en ambos sentidos para grafo no dirigido
         String sql = "INSERT INTO zona_adyacencia (zona_origen_id, zona_destino_id, peso) VALUES (?, ?, ?), (?, ?, ?)";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+        // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
+        try (PreparedStatement ps = ConexionBD.getInstance().getConnection().prepareStatement(sql)) {
             // Conexión A -> B
             ps.setInt(1, idZonaA);
             ps.setInt(2, idZonaB);
