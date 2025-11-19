@@ -4,7 +4,9 @@ import app.domain.model.*;
 import app.domain.repository.ZonaRepository;
 import app.domain.service.*;
 import app.infrastructure.persistence.ConexionBD;
+import app.ui.components.LoadingPanel;
 import app.ui.panels.*;
+import app.ui.components.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.views.SideNavigation;
 import app.ui.views.TopBar;
@@ -31,33 +33,119 @@ public class MainFrame extends JFrame {
     private SideNavigation sideNav;
     private TripSidebarPanel tripSidebar;
     private mapaPanel panelMapa;
-    private Sistema sistema;
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
     private PerfilPanel perfilPanel;
     private AdminMenuPanel adminPanel;
 
-    private boolean modoColocarZona = false; // <-- NUEVA VARIABLE DE ESTADO
+    private boolean modoColocarZona = false;
     private AdminMenuPanel panelAdminOrigen;
 
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private JPanel welcomePanel;
 
-    ZonaRepository repo = new ZonaRepository();
-
-
-
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1022, 704);
+        setSize(1122, 704);
         setLocationRelativeTo(null);
         setResizable(false);
         setTitle("Sistema de Viajes");
 
-        sistema = Sistema.getInstancia();
-        initializeLayout();
-        
+        LoadingPanel loadingPanel = new LoadingPanel();
+        setContentPane(loadingPanel);
+
+        new InitializationTask(loadingPanel).execute();
+    }
+
+    /**
+     * Tarea de fondo para inicializar los componentes pesados de la aplicación.
+     */
+    private class InitializationTask extends SwingWorker<Boolean, String> {
+        private LoadingPanel loadingPanel;
+
+        public InitializationTask(LoadingPanel loadingPanel) {
+            this.loadingPanel = loadingPanel;
+        }
+
+        @Override
+        protected Boolean doInBackground() throws Exception {
+            try {
+                publish("Estableciendo conexión...");
+                ConexionBD.getInstance().getConnection(); // Inicia la conexión a la BD
+
+                publish("Cargando mapa de zonas...");
+                GestorGrafos.getInstancia().getGrafo(); // Carga el grafo
+
+                publish("Preparando conductores...");
+                GestorConductores.getInstancia().cargarConductoresDesdeBD(); // Carga los conductores
+
+                publish("Finalizando...");
+                Thread.sleep(500); // Pequeña pausa para que se vea el último mensaje
+
+                return true; // Éxito
+            } catch (Exception e) {
+                publish("Error: " + e.getMessage());
+                e.printStackTrace();
+                return false; // Fracaso
+            }
+        }
+
+        @Override
+        protected void process(List<String> chunks) {
+            // Actualiza la UI con los mensajes de progreso
+            String lastMessage = chunks.get(chunks.size() - 1);
+            loadingPanel.setStatus(lastMessage);
+        }
+
+        @Override
+        protected void done() {
+            try {
+                if (get()) { // Si doInBackground() devolvió true (éxito)
+                    // 3. Configura la UI principal
+                    initializeMainUI();
+                    // 4. Decide si mostrar el login o el dashboard
+                    checkSessionAndNavigate();
+                } else {
+                    // Si hubo un error, muestra un diálogo y cierra la app
+                    JOptionPane.showMessageDialog(MainFrame.this, "No se pudo iniciar la aplicación. Verifique la conexión a la base de datos.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                    System.exit(1);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+    }
+
+    private void initializeLayout() {
+        // ... (Tu código de initializeLayout() sin cambios) ...
+        mainFrame = new JPanel(new BorderLayout());
+        mainFrame.setBackground(Colors.SECONDARY);
+        topBar = new TopBar();
+        mainFrame.add(topBar, BorderLayout.NORTH);
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(Colors.SECONDARY);
+        leftPanel = new JPanel(new BorderLayout());
+        // El tamaño se establecerá dinámicamente al cambiar de vista
+        centerPanel.add(leftPanel, BorderLayout.WEST);
+        selectedPanel = new JPanel(new BorderLayout());
+        selectedPanel.setBackground(Colors.SECONDARY);
+        selectedPanel.setBorder(null); // Eliminamos cualquier borde del panel de contenido
+        centerPanel.add(selectedPanel, BorderLayout.CENTER);
+        mainFrame.add(centerPanel, BorderLayout.CENTER);
+        setContentPane(mainFrame);
+        adminPanel = new AdminMenuPanel(this);
+    }
+
+    private void initializeMainUI() {
+        initializeLayout(); // Configura el layout principal (paneles, topbar, etc.)
+        setContentPane(mainFrame); // Reemplaza el panel de carga por el panel principal
+        revalidate();
+        repaint();
+    }
+
+    private void checkSessionAndNavigate() {
         String savedUsername = SessionManager.getSavedUsername();
         if (savedUsername != null) {
             UsuarioRepository userRepo = new MySQLUsuarioRepository();
@@ -73,33 +161,14 @@ public class MainFrame extends JFrame {
         } else {
             navigateToLoginPanel();
         }
-
-        setVisible(true);
-    }
-
-    private void initializeLayout() {
-        // ... (Tu código de initializeLayout() sin cambios) ...
-        mainFrame = new JPanel(new BorderLayout());
-        mainFrame.setBackground(Colors.SECONDARY);
-        topBar = new TopBar();
-        mainFrame.add(topBar, BorderLayout.NORTH);
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBackground(Colors.SECONDARY);
-        leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setPreferredSize(new Dimension(250, 0));
-        centerPanel.add(leftPanel, BorderLayout.WEST);
-        selectedPanel = new JPanel(new BorderLayout());
-        selectedPanel.setBackground(Colors.SECONDARY);
-        selectedPanel.setBorder(null); // Eliminamos cualquier borde del panel de contenido
-        centerPanel.add(selectedPanel, BorderLayout.CENTER);
-        mainFrame.add(centerPanel, BorderLayout.CENTER);
-        setContentPane(mainFrame);
-        adminPanel = new AdminMenuPanel(this);
     }
 
     private void showGuestView(JPanel guestPanel) {
         leftPanel.removeAll();
         selectedPanel.removeAll();
+
+        // --- ¡SOLUCIÓN! Ajustamos el ancho para el panel de login/registro ---
+        leftPanel.setPreferredSize(new Dimension(350, 0));
 
         leftPanel.add(guestPanel, BorderLayout.CENTER);
 
@@ -133,8 +202,20 @@ public class MainFrame extends JFrame {
         showGuestView(registerPanel);
     }
 
+    /**
+     * Maneja el cierre de sesión, limpiando la sesión y mostrando la vista de invitado.
+     */
+    public void doLogout() {
+        // 1. Borra la sesión guardada
+        SessionManager.clearSession();
+        // 2. Navega de vuelta al panel de login
+        navigateToLoginPanel();
+    }
+
     private void showDashboardView(Usuario user) {
-        sistema = Sistema.getInstancia();
+        // --- ¡SOLUCIÓN! Restauramos el ancho para la barra de navegación principal ---
+        leftPanel.setPreferredSize(new Dimension(280, 0));
+
         initializePanels();
         setupListeners();
         topBar.setUserName(user.getUsername());
@@ -156,7 +237,7 @@ public class MainFrame extends JFrame {
         this.modoColocarZona = true;
         this.panelAdminOrigen = panelOrigen;
         mostrarMapa(); // Muestra el mapa
-        JOptionPane.showMessageDialog(this, "Haz clic en el mapa para seleccionar la ubicación de la nueva zona.", "Modo Colocar Zona", JOptionPane.INFORMATION_MESSAGE);
+        new ModernMessageDialog(this, "Modo Colocar Zona", "Haz clic en el mapa para seleccionar la ubicación de la nueva zona.", ModernMessageDialog.MessageType.INFO).showDialog();
         // Cambiar cursor o indicar visualmente el modo
         panelMapa.getRootPanel().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }

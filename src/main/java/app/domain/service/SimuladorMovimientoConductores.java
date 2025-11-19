@@ -14,12 +14,11 @@ import java.util.Random;
  */
 public class SimuladorMovimientoConductores {
 
-    private static final int VELOCIDAD_M_POR_S = 10; // 10 metros por segundo
+    private static final int VELOCIDAD_M_POR_S = 25; // 10 metros por segundo
     private static final int INTERVALO_ACTUALIZACION_MS = 10; // Actualiza la pantalla ~20 veces por segundo
 
     private final Timer timer;
     private final List<Conductor> conductores;
-    private final GrafoZonas grafo;
     private final Random random = new Random();
     private final GestorRutas gestorRutas = new GestorRutas(); // El simulador ahora necesita su propio gestor de rutas
     private final MainFrame mainFrame; // <-- ¡NUEVO! Referencia al frame principal
@@ -29,13 +28,11 @@ public class SimuladorMovimientoConductores {
      * Constructor del simulador.
      * @param mainFrame La instancia del frame principal para acceder a datos globales como el viaje actual.
      * @param conductores La lista de conductores a simular.
-     * @param grafo El grafo de zonas para saber las rutas posibles.
      * @param onUpdateCallback Una acción (como `mapa.repaint()`) que se ejecutará cada vez que se actualice una posición.
      */
-    public SimuladorMovimientoConductores(MainFrame mainFrame, List<Conductor> conductores, GrafoZonas grafo, Runnable onUpdateCallback) {
+    public SimuladorMovimientoConductores(MainFrame mainFrame, List<Conductor> conductores, Runnable onUpdateCallback) {
         this.mainFrame = mainFrame; // <-- ¡NUEVO!
         this.conductores = conductores;
-        this.grafo = grafo;
         this.onUpdateCallback = onUpdateCallback;
 
         inicializarPosiciones();
@@ -53,6 +50,7 @@ public class SimuladorMovimientoConductores {
      * Coloca a cada conductor en su zona inicial.
      */
     private void inicializarPosiciones() {
+        GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo();
         for (Conductor conductor : conductores) {
             if (conductor.getZonaActualId() != null) {
                 Zona zonaActual = grafo.getZona(conductor.getZonaActualId());
@@ -165,15 +163,15 @@ public class SimuladorMovimientoConductores {
 
                 // --- Lógica de llegada a un nodo ---
                 if (conductor.getEstado() == EstadoConductor.OCUPADO) {
-                    // Si está en la fase final de la recogida.
-                    if (conductor.getTripPhase() == TripPhase.MOVING_TO_PICKUP && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) {
+                    // Si está en la fase final de la recogida
+                    if (conductor.getTripPhase() == TripPhase.MOVING_TO_PICKUP && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) { // Si está en la fase final de la recogida
                         System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al punto de recogida.");
                         conductor.setTripPhase(TripPhase.WAITING_AT_PICKUP);
                         conductor.setWaitStartTimeMs(tiempoActual);
                         conductor.setRutaAsignada(null); // Limpia la ruta de recogida.
                     }
                     // Si está en la fase final del viaje.
-                    else if (conductor.getTripPhase() == TripPhase.MOVING_TO_DESTINATION && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) {
+                    else if (conductor.getTripPhase() == TripPhase.MOVING_TO_DESTINATION && esDestinoFinalDeRuta(conductor, zonaAlcanzada)) { // Si está en la fase final del viaje
                         System.out.println("[SIM] Conductor " + conductor.getNombreCompleto() + " ha llegado al destino final del viaje.");
                         conductor.setTripPhase(TripPhase.WAITING_AT_DESTINATION);
                         conductor.setWaitStartTimeMs(tiempoActual);
@@ -202,6 +200,7 @@ public class SimuladorMovimientoConductores {
     private void calcularYAsignarRutaDeRecogida(Conductor conductor) {
         System.out.println("[SIM-DEBUG] Conductor " + conductor.getNombreCompleto() + " está quieto y OCUPADO. Calculando ruta de recogida.");
         Viaje viajeAsignado = findActiveTripForConductor(conductor.getId());
+        GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo(); // <-- ¡SOLUCIÓN! Obtiene el grafo actualizado
         if (viajeAsignado != null) {
             Zona zonaOrigenViaje = viajeAsignado.getRutaZonas().get(0);
             Zona zonaActualConductor = grafo.getZona(conductor.getZonaActualId());
@@ -223,6 +222,7 @@ public class SimuladorMovimientoConductores {
     }
 
     private void iniciarViajeAleatorio(Conductor conductor) {
+        GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo(); // <-- ¡SOLUCIÓN! Obtiene el grafo actualizado
         Zona zonaActual = grafo.getZona(conductor.getZonaActualId());
         if (zonaActual == null) return;
 
@@ -246,6 +246,7 @@ public class SimuladorMovimientoConductores {
      */
     private void iniciarSiguienteTramo(Conductor conductor) {
         List<Zona> ruta = conductor.getRutaAsignada();
+        GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo(); // <-- ¡SOLUCIÓN! Obtiene el grafo actualizado
         if (ruta == null || ruta.isEmpty()) return;
 
         // --- ¡CORRECCIÓN CLAVE! ---
@@ -276,7 +277,7 @@ public class SimuladorMovimientoConductores {
     /**
      * Comprueba si una zona es el destino final de la ruta asignada a un conductor.
      */
-    private boolean esDestinoFinalDeRuta(Conductor conductor, Zona zona) {
+    private boolean esDestinoFinalDeRuta(Conductor conductor, Zona zona) { // No necesita el grafo como parámetro
         List<Zona> ruta = conductor.getRutaAsignada();
         if (ruta == null || ruta.isEmpty() || zona == null) return false;
         return zona.getId() == ruta.get(ruta.size() - 1).getId();

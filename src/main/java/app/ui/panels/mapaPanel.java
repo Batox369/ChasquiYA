@@ -9,6 +9,7 @@ import app.ui.components.MapMarker;
 import app.ui.components.RouteRenderer;
 import app.ui.components.ZonaRenderer; // Importa el renderer
 import app.domain.model.*;
+import app.ui.components.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.components.ConductorRenderer;
 import app.ui.MainFrame;
@@ -71,7 +72,7 @@ public class mapaPanel{
             checkTripStatusAndUpdateSidebar(); // Revisa el estado del viaje en cada tick
             mapaCanvas.repaint();
         };
-        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, this.grafoZonas, updateAction);
+        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, updateAction);
         this.simulador.start();
     }
     private void loadImage() {
@@ -231,10 +232,7 @@ public class mapaPanel{
 
             // 7. Validar la ruta (una ruta válida debe tener al menos 2 zonas)
             if (rutaActual == null || rutaActual.size() < 2) {
-                JOptionPane.showMessageDialog(rootPanel,
-                        "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
-                        "Ruta no encontrada",
-                        JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Ruta no encontrada", "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(), ModernMessageDialog.MessageType.ERROR).showDialog();
                 // ¡ARREGLO! Si la ruta falla, reseteamos AMBAS zonas para no quedarnos atascados.
                 zonaOrigen = null;  // <-- AÑADIR ESTA LÍNEA
                 zonaDestino = null; // Esta línea ya estaba, la dejamos.
@@ -260,7 +258,7 @@ public class mapaPanel{
             viajeActual.setDistanciaMetros(distanciaTotalRuta); // El peso ya debería ser la distancia en metros
 
             double tarifaBase = 5.0;
-            double costoPorKm = 2.5;
+            double costoPorKm = 3.5;
             double distanciaKm = distanciaTotalRuta / 1000;
 
             double precioCalculado = tarifaBase + (distanciaKm * costoPorKm);
