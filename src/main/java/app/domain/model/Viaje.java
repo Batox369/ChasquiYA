@@ -40,8 +40,6 @@ public class Viaje {
     public Viaje(int idOrigen, String nombreOrigen, double lonOrigen, double latOrigen,
                  int idDestino, String nombreDestino, double lonDestino, double latDestino,
                  double distanciaMetros) {
-        // --- ¡CORRECCIÓN! ---
-        // Se instancia el tipo correcto 'Coordenada' en lugar de 'Zona'.
         this.fecha = new Date();
         this.origen = new Coordenada(lonOrigen, latOrigen);
         this.destino = new Coordenada(lonDestino, latDestino);

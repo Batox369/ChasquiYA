@@ -8,27 +8,25 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.RoundRectangle2D;
 
-public class PrimaryButton extends JButton {
+public class SecondaryButton extends JButton {
 
-    private Color defaultColor = Colors.PRIMARY;
-    private Color hoverColor = Colors.HOVER;
-    private Color pressedColor = Colors.PRIMARY_DARK;
+    private Color defaultColor = new Color(226, 232, 240); // Light gray
+    private Color hoverColor = new Color(203, 213, 224);   // Darker gray
+    private Color pressedColor = new Color(160, 174, 192); // Even darker
     private int cornerRadius = 8;
     private boolean isHovered = false;
 
-    public PrimaryButton(String text) {
+    public SecondaryButton(String text) {
         super(text);
         setFont(new Font("SansSerif", Font.BOLD, 14));
-        setForeground(Color.WHITE);
+        setForeground(Colors.TEXT_PRIMARY); // Dark text
         setCursor(new Cursor(Cursor.HAND_CURSOR));
 
-        // Remove default button painting to allow custom drawing
         setContentAreaFilled(false);
         setFocusPainted(false);
         setBorderPainted(false);
         setOpaque(false);
 
-        // Set internal padding
         setBorder(BorderFactory.createEmptyBorder(12, 25, 12, 25));
 
         addMouseListener(new MouseAdapter() {
@@ -60,13 +58,10 @@ public class PrimaryButton extends JButton {
             bgColor = defaultColor;
         }
 
-        // Draw the rounded background
         g2.setColor(bgColor);
         g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), cornerRadius, cornerRadius));
 
         g2.dispose();
-
-        // Let the original component paint the text
         super.paintComponent(g);
     }
 }

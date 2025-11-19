@@ -263,7 +263,7 @@ public class TripSidebarPanel extends JPanel {
         asignandoPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         JLabel asignandoLabel = new JLabel("Asignando conductor...");
-        asignandoLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        asignandoLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         asignandoLabel.setForeground(Colors.SUCCESS);
         asignandoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -274,9 +274,6 @@ public class TripSidebarPanel extends JPanel {
 
     public void actualizarViaje(Viaje viaje) {
         this.viajeActual = viaje;
-
-        Coordenada origen = viaje.getOrigen();
-        Coordenada destino = viaje.getDestino();
 
         origenLabel.setText(viaje.getNombreOrigen());
         origenLabel.setForeground(Colors.SUCCESS);
@@ -310,7 +307,7 @@ public class TripSidebarPanel extends JPanel {
 
     private double calcularPrecio(double distanciaMetros) {
         double tarifaBase = 5.0;
-        double costoPorKm = 2.5;
+        double costoPorKm = 3.5;
         double distanciaKm = distanciaMetros / 1000;
         return tarifaBase + (distanciaKm * costoPorKm);
     }
@@ -333,7 +330,7 @@ public class TripSidebarPanel extends JPanel {
         solicitarButton.setVisible(true);
         asignandoPanel.setVisible(false);
         conductorPanel.setVisible(false); // Ocultamos también el panel del conductor
-
+        cancelarButton.setVisible(true);
         viajeActual = null;
     }
 

@@ -1,11 +1,12 @@
 package app.ui.panels;
 
 import app.infrastructure.shared.constants.Colors;
-import app.ui.components.InputField;
+import app.ui.components.SmoothScrollPane;
+import app.ui.components.ModernTextField;
+import app.ui.components.ModernComboBox;
+import app.ui.components.ModernMessageDialog;
 import app.ui.components.ModernScrollBarUI;
-import app.ui.components.ModernActionButton;
 import app.ui.components.PrimaryButton;
-import app.ui.components.ZoneSelector;
 import app.domain.model.GrafoZonas;
 import app.domain.model.Zona;
 import app.domain.repository.ConductorRepository;
@@ -35,19 +36,19 @@ public class AdminMenuPanel extends JPanel {
     private final MainFrame mainFrame;
 
     // Conductores
-    private InputField conductorNombreField;
-    private ZoneSelector conductorZoneSelector;
+    private ModernTextField conductorNombreField;
+    private ModernComboBox<String> conductorZoneSelector;
     private PrimaryButton btnAgregarConductor;
 
     // Zonas: Añadir
-    private InputField zonaNombreField;
+    private ModernTextField zonaNombreField;
     private PrimaryButton btnSeleccionarUbicacion;
     private JLabel lblCoordsSeleccionadas;
 
     // Zonas: Conectar
-    private JComboBox<String> cmbZonaOrigen;
-    private JComboBox<String> cmbZonaDestino;
-    private InputField txtDistancia;
+    private ModernComboBox<String> cmbZonaOrigen;
+    private ModernComboBox<String> cmbZonaDestino;
+    private ModernTextField txtDistancia;
     private PrimaryButton btnConectarZonas;
 
     private String nombreZonaPendiente = null;
@@ -62,7 +63,7 @@ public class AdminMenuPanel extends JPanel {
         add(createHeader(), BorderLayout.NORTH);
 
         // --- MEJORA DE SCROLLPANE ---
-        JScrollPane scrollPane = new JScrollPane(createMainContentPanel());
+        JScrollPane scrollPane = new SmoothScrollPane(createMainContentPanel());
         scrollPane.setBorder(null); // Sin bordes
         scrollPane.getViewport().setBackground(new Color(241, 245, 249)); // Fondo consistente solicitado
         scrollPane.getVerticalScrollBar().setUI(new ModernScrollBarUI()); // UI personalizada
@@ -79,7 +80,7 @@ public class AdminMenuPanel extends JPanel {
         header.setBorder(new EmptyBorder(0, 0, PADDING, 0));
 
         JLabel title = new JLabel("Panel de Administración");
-        title.setFont(new Font("Segoe UI", Font.BOLD, 28));
+        title.setFont(new Font("SansSerif", Font.BOLD, 28));
         title.setForeground(new Color(30, 41, 59));
 
         JPanel titlePanel = new JPanel(new GridLayout(1, 1, 0, 4));
@@ -145,20 +146,20 @@ public class AdminMenuPanel extends JPanel {
         gbc.insets = new Insets(0, 0, SPACING, 0);
         gbc.weightx = 1.0;
 
-        conductorNombreField = new InputField("Nombre completo del conductor");
-        conductorZoneSelector = new ZoneSelector("Zona de trabajo");
+        conductorNombreField = new ModernTextField(20);
+        conductorZoneSelector = new ModernComboBox<>();
         btnAgregarConductor = new PrimaryButton("Agregar Conductor");
 
         // Fila 0: Nombre
         gbc.gridy = 0;
-        gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST; gbc.insets = new Insets(0, 15, SPACING, 0);
         form.add(createFieldLabel("Nombre del Conductor"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         form.add(conductorNombreField, gbc);
 
         // Fila 1: Zona
-        gbc.gridy = 1; gbc.insets = new Insets(SPACING, 0, SPACING, 0);
+        gbc.gridy = 1; gbc.insets = new Insets(SPACING, 15, SPACING, 0);
         gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
         form.add(createFieldLabel("Zona Asignada"), gbc);
 
@@ -184,8 +185,9 @@ public class AdminMenuPanel extends JPanel {
         gbc.insets = new Insets(0, 0, SPACING, 0);
         gbc.weightx = 1.0;
 
-        zonaNombreField = new InputField("Ej: Centro, Norte, Sur");
-        btnSeleccionarUbicacion = new PrimaryButton("📍 Seleccionar en Mapa");
+        zonaNombreField = new ModernTextField(20);
+        zonaNombreField.setPlaceholder("Ej: Centro, Norte, Sur");
+        btnSeleccionarUbicacion = new PrimaryButton("Seleccionar en Mapa");
         lblCoordsSeleccionadas = new JLabel("Sin ubicación seleccionada");
         lblCoordsSeleccionadas.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         lblCoordsSeleccionadas.setForeground(new Color(100, 116, 139));
@@ -221,24 +223,23 @@ public class AdminMenuPanel extends JPanel {
         gbc.insets = new Insets(0, 0, SPACING, 0);
         gbc.weightx = 1.0;
 
-        cmbZonaOrigen = new JComboBox<>();
-        cmbZonaDestino = new JComboBox<>();
-        txtDistancia = new InputField("Ej: 5.5");
+        cmbZonaOrigen = new ModernComboBox<>();
+        cmbZonaDestino = new ModernComboBox<>();
+        txtDistancia = new ModernTextField(10);
+        txtDistancia.setPlaceholder("Ej: 5.5");
         btnConectarZonas = new PrimaryButton("Crear Conexión");
-
-        styleComboBox(cmbZonaOrigen);
-        styleComboBox(cmbZonaDestino);
 
         // Fila 0: Zona de Origen
         gbc.gridy = 0;
         gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.WEST;
+        gbc.insets = new Insets(SPACING, 10, SPACING, 0);
         form.add(createFieldLabel("Zona de Origen"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         form.add(cmbZonaOrigen, gbc);
 
         // Fila 1: Zona de Destino
-        gbc.gridy = 1; gbc.insets = new Insets(SPACING, 0, SPACING, 0);
+        gbc.gridy = 1; gbc.insets = new Insets(SPACING, 10, SPACING, 0);
         gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
         form.add(createFieldLabel("Zona de Destino"), gbc);
 
@@ -248,7 +249,8 @@ public class AdminMenuPanel extends JPanel {
         // Fila 2: Distancia
         gbc.gridy = 2;
         gbc.gridx = 0; gbc.weightx = 0; gbc.fill = GridBagConstraints.NONE;
-        form.add(createFieldLabel("Distancia (km)"), gbc);
+        gbc.insets = new Insets(SPACING, 10, SPACING, 0);
+        form.add(createFieldLabel("Distancia (metros)"), gbc);
 
         gbc.gridx = 1; gbc.weightx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         form.add(txtDistancia, gbc);
@@ -266,17 +268,6 @@ public class AdminMenuPanel extends JPanel {
         label.setFont(new Font("Segoe UI", Font.BOLD, 13)); // Corregido: SEMIBOLD no es una constante de Font
         label.setForeground(new Color(51, 65, 85));
         return label;
-    }
-
-    private void styleComboBox(JComboBox<String> combo) {
-        combo.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        combo.setBackground(Color.WHITE);
-        combo.setPreferredSize(new Dimension(0, 38));
-        // Aplicamos un borde sutil y consistente
-        combo.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(226, 232, 240), 1),
-                BorderFactory.createEmptyBorder(0, 8, 0, 0)
-        ));
     }
 
     private Border createTitledBorder(String title) {
@@ -302,21 +293,21 @@ public class AdminMenuPanel extends JPanel {
     private void setupConductorListeners() {
         btnAgregarConductor.addActionListener(e -> {
             String nombreConductor = conductorNombreField.getText().trim();
-            String nombreZona = conductorZoneSelector.getZonaSeleccionada();
+            String nombreZona = (String) conductorZoneSelector.getSelectedItem();
 
             if (nombreConductor.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Por favor, ingrese el nombre del conductor.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Campo Requerido", "Por favor, ingrese el nombre del conductor.", ModernMessageDialog.MessageType.WARNING).showDialog();
                 return;
             }
 
             if (nombreZona == null) {
-                JOptionPane.showMessageDialog(this, "Por favor, seleccione una zona para el conductor.", "Campo Requerido", JOptionPane.WARNING_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Campo Requerido", "Por favor, seleccione una zona para el conductor.", ModernMessageDialog.MessageType.WARNING).showDialog();
                 return;
             }
 
             Zona zonaAsignada = buscarZonaPorNombreEnGrafo(GestorGrafos.getInstancia().getGrafo(), nombreZona);
             if (zonaAsignada == null) {
-                JOptionPane.showMessageDialog(this, "La zona seleccionada no es válida.", "Error Interno", JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Error Interno", "La zona seleccionada no es válida.", ModernMessageDialog.MessageType.ERROR).showDialog();
                 return;
             }
 
@@ -324,10 +315,7 @@ public class AdminMenuPanel extends JPanel {
             boolean exito = repo.addConductor(nombreConductor, zonaAsignada.getId());
 
             if (exito) {
-                JOptionPane.showMessageDialog(this,
-                        String.format("Conductor '%s' agregado exitosamente a la zona '%s'.", nombreConductor, nombreZona),
-                        "Éxito",
-                        JOptionPane.INFORMATION_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Éxito", String.format("Conductor '%s' agregado exitosamente a la zona '%s'.", nombreConductor, nombreZona), ModernMessageDialog.MessageType.SUCCESS).showDialog();
                 conductorNombreField.setText("");
                 conductorZoneSelector.setSelectedIndex(-1); // Limpiar selección
 
@@ -339,7 +327,7 @@ public class AdminMenuPanel extends JPanel {
                 // 2. Notificamos al mapa para que se repinte con la lista actualizada
                 mainFrame.getRMapaPanel().actualizarConductores(gestorConductores.getConductores());
             } else {
-                JOptionPane.showMessageDialog(this, "Error al agregar el conductor. Verifique la consola para más detalles.", "Error", JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Error", "Error al agregar el conductor. Verifique la consola para más detalles.", ModernMessageDialog.MessageType.ERROR).showDialog();
             }
         });
     }
@@ -348,10 +336,7 @@ public class AdminMenuPanel extends JPanel {
         btnSeleccionarUbicacion.addActionListener(e -> {
             nombreZonaPendiente = zonaNombreField.getText().trim();
             if (nombreZonaPendiente.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                    "Por favor, ingrese un nombre para la zona primero.",
-                    "Campo Requerido",
-                    JOptionPane.WARNING_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Campo Requerido", "Por favor, ingrese un nombre para la zona primero.", ModernMessageDialog.MessageType.WARNING).showDialog();
                 return;
             }
             mainFrame.activarModoColocarZona(this);
@@ -363,17 +348,11 @@ public class AdminMenuPanel extends JPanel {
             String distStr = txtDistancia.getText().trim();
 
             if (nombreOrigen == null || nombreDestino == null || nombreOrigen.equals(nombreDestino)) {
-                JOptionPane.showMessageDialog(this,
-                    "Debe seleccionar dos zonas diferentes.",
-                    "Selección Inválida",
-                    JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Selección Inválida", "Debe seleccionar dos zonas diferentes.", ModernMessageDialog.MessageType.ERROR).showDialog();
                 return;
             }
             if (distStr.isEmpty()) {
-                JOptionPane.showMessageDialog(this,
-                    "Ingrese la distancia entre las zonas.",
-                    "Campo Requerido",
-                    JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Campo Requerido", "Ingrese la distancia entre las zonas.", ModernMessageDialog.MessageType.WARNING).showDialog();
                 return;
             }
 
@@ -382,10 +361,7 @@ public class AdminMenuPanel extends JPanel {
                 distancia = Double.parseDouble(distStr);
                 if (distancia <= 0) throw new NumberFormatException();
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this,
-                    "La distancia debe ser un número positivo válido.",
-                    "Error de Formato",
-                    JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Error de Formato", "La distancia debe ser un número positivo válido.", ModernMessageDialog.MessageType.ERROR).showDialog();
                 return;
             }
 
@@ -394,10 +370,7 @@ public class AdminMenuPanel extends JPanel {
             Zona zonaB = buscarZonaPorNombreEnGrafo(grafo, nombreDestino);
 
             if (zonaA == null || zonaB == null) {
-                JOptionPane.showMessageDialog(this,
-                    "No se encontraron las zonas seleccionadas.",
-                    "Error Interno",
-                    JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Error Interno", "No se encontraron las zonas seleccionadas.", ModernMessageDialog.MessageType.ERROR).showDialog();
                 return;
             }
 
@@ -405,20 +378,14 @@ public class AdminMenuPanel extends JPanel {
             boolean exito = repo.addConexion(zonaA.getId(), zonaB.getId(), distancia);
 
             if (exito) {
-                JOptionPane.showMessageDialog(this,
-                    String.format("Conexión creada exitosamente entre '%s' y '%s'.", nombreOrigen, nombreDestino),
-                    "Éxito",
-                    JOptionPane.INFORMATION_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Éxito", String.format("Conexión creada exitosamente entre '%s' y '%s'.", nombreOrigen, nombreDestino), ModernMessageDialog.MessageType.SUCCESS).showDialog();
                 txtDistancia.setText("");
 
                 GestorGrafos gestor = GestorGrafos.getInstancia();
                 gestor.recargarGrafo();
                 mainFrame.getRMapaPanel().actualizarGrafo(gestor.getGrafo());
             } else {
-                JOptionPane.showMessageDialog(this,
-                    "Error al crear la conexión. Es posible que ya exista.",
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Error", "Error al crear la conexión. Es posible que ya exista.", ModernMessageDialog.MessageType.ERROR).showDialog();
             }
         });
     }
@@ -431,10 +398,7 @@ public class AdminMenuPanel extends JPanel {
         boolean exito = repo.addZona(nombreZonaPendiente, x, y);
 
         if (exito) {
-            JOptionPane.showMessageDialog(this,
-                String.format("Zona '%s' creada exitosamente.", nombreZonaPendiente),
-                "Éxito",
-                JOptionPane.INFORMATION_MESSAGE);
+            new ModernMessageDialog(mainFrame, "Éxito", String.format("Zona '%s' creada exitosamente.", nombreZonaPendiente), ModernMessageDialog.MessageType.SUCCESS).showDialog();
             zonaNombreField.setText("");
             nombreZonaPendiente = null;
             lblCoordsSeleccionadas.setText("Sin ubicación seleccionada");
@@ -445,10 +409,7 @@ public class AdminMenuPanel extends JPanel {
             actualizarComboBoxesConexion();
             actualizarComboBoxZonasConductores();
         } else {
-            JOptionPane.showMessageDialog(this,
-                "Error al crear la zona. Verifique que el nombre no esté duplicado.",
-                "Error",
-                JOptionPane.ERROR_MESSAGE);
+            new ModernMessageDialog(mainFrame, "Error", "Error al crear la zona. Verifique que el nombre no esté duplicado.", ModernMessageDialog.MessageType.ERROR).showDialog();
             nombreZonaPendiente = null;
         }
     }
@@ -466,14 +427,14 @@ public class AdminMenuPanel extends JPanel {
     }
 
     private void actualizarComboBoxZonasConductores() {
-        ArrayList<String> nombresZonas = new ArrayList<>();
+        conductorZoneSelector.removeAllItems();
         Collection<Zona> zonas = GestorGrafos.getInstancia().getGrafo().getZonas();
         if (zonas != null) {
             for (Zona z : zonas) {
-                nombresZonas.add(z.getNombre());
+                conductorZoneSelector.addItem(z.getNombre());
             }
         }
-        conductorZoneSelector.setZonas(nombresZonas);
+        conductorZoneSelector.setSelectedIndex(-1); // Dejar sin selección por defecto
     }
 
     private Zona buscarZonaPorNombreEnGrafo(GrafoZonas grafo, String nombre) {

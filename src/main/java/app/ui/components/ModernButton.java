@@ -121,8 +121,10 @@ public class ModernButton extends JToggleButton {
             }
         }
 
-        // Llama al método de pintura original para que dibuje los componentes hijos (JLabels)
-        super.paintComponent(g);
+        // --- ¡SOLUCIÓN! ---
+        // En lugar de llamar a super.paintComponent(), que puede causar parpadeos,
+        // llamamos directamente a super.paintChildren() para pintar nuestros JLabels internos.
+        super.paintChildren(g);
         g2.dispose();
     }
 
