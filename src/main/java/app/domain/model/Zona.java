@@ -1,6 +1,6 @@
 package app.domain.model;
 
-import app.infrastructure.shared.datastructures.CircularList;
+import app.domain.structures.CircularList;
 
 public class Zona {
     private int id;

@@ -1,4 +1,4 @@
-package app.infrastructure.shared.datastructures;
+package app.domain.structures;
 
 import app.domain.model.Conductor;
 

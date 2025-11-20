@@ -51,7 +51,10 @@ public class MainFrame extends JFrame {
         setSize(1122, 704);
         setLocationRelativeTo(null);
         setResizable(false);
-        setTitle("Sistema de Viajes");
+        setTitle("Movely");
+
+        Toolkit t = Toolkit.getDefaultToolkit();
+        setIconImage(t.getImage(getClass().getResource("/soloLogo.png")));
 
         LoadingPanel loadingPanel = new LoadingPanel();
         setContentPane(loadingPanel);
@@ -176,7 +179,7 @@ public class MainFrame extends JFrame {
         if (welcomePanel == null) {
             welcomePanel = new JPanel(new GridBagLayout());
             welcomePanel.setBackground(Colors.CARD_BG);
-            JLabel welcomeText = new JLabel("Bienvenido a ChasquiYa. Por favor, inicie sesión o regístrese.");
+            JLabel welcomeText = new JLabel("Bienvenido a Movely. Por favor, inicie sesión o regístrese.");
             welcomeText.setFont(new Font("Segoe UI", Font.PLAIN, 18));
             welcomeText.setForeground(Colors.TEXT_SECONDARY.darker());
             welcomePanel.add(welcomeText);
@@ -262,20 +265,14 @@ public class MainFrame extends JFrame {
         sideNav = new SideNavigation();
         tripSidebar = new TripSidebarPanel();
 
-        // --- ¡AQUÍ ESTÁ LA FORMA CORRECTA! ---
-        // 1. Obtén el grafo desde el Singleton GestorGrafos
         GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo();
 
-        // 2. Crea una instancia del GestorRutas
         GestorRutas rutas = new GestorRutas();
 
-        // 3. Obtén la instancia del GestorConductores
         this.gestorConductores = GestorConductores.getInstancia();
-        this.asignadorDeViajes = new AsignadorDeViajes(); // <-- NUEVO
+        this.asignadorDeViajes = new AsignadorDeViajes();
 
-        // 4. Pasa TODAS las instancias correctas al constructor de mapaPanel
         panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas, this.gestorConductores);
-        // --------
         
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
