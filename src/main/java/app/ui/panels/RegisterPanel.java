@@ -1,13 +1,12 @@
 package app.ui.panels;
 
-import app.domain.model.Usuario;
 import app.domain.repository.UsuarioRepository;
 import app.infrastructure.persistence.MySQLUsuarioRepository;
 import app.infrastructure.shared.constants.Colors;
-import app.ui.components.ModernMessageDialog;
+import app.ui.components.modern.ModernMessageDialog;
 import app.ui.MainFrame;
-import app.ui.components.ModernPasswordField;
-import app.ui.components.ModernTextField;
+import app.ui.components.modern.ModernPasswordField;
+import app.ui.components.modern.ModernTextField;
 import app.ui.components.PrimaryButton;
 import org.mindrot.jbcrypt.BCrypt;
 

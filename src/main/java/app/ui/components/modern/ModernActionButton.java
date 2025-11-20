@@ -1,4 +1,4 @@
-package app.ui.components;
+package app.ui.components.modern;
 
 import app.infrastructure.shared.constants.Colors;
 import javax.swing.*;

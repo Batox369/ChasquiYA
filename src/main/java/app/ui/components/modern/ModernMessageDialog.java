@@ -1,6 +1,7 @@
-package app.ui.components;
+package app.ui.components.modern;
 
 import app.infrastructure.shared.constants.Colors;
+import app.ui.components.PrimaryButton;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

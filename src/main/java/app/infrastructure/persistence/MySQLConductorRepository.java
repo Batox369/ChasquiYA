@@ -1,7 +1,7 @@
 package app.infrastructure.persistence;
 
 import app.domain.model.Conductor;
-import app.domain.model.EstadoConductor;
+import app.domain.model.enums.EstadoConductor;
 import app.domain.repository.ConductorRepository;
 
 import java.sql.*;

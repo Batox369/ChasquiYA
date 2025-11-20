@@ -1,6 +1,7 @@
 package app.domain.service;
 
 import app.domain.model.*;
+import app.domain.model.enums.EstadoConductor;
 
 import java.util.*;
 

@@ -1,4 +1,4 @@
-package app.ui.components;
+package app.ui.panels;
 
 import app.infrastructure.shared.constants.Colors;
 

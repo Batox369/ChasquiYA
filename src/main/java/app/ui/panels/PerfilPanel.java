@@ -4,9 +4,8 @@ import app.domain.model.Viaje;
 import app.domain.service.GestorHistorial;
 import app.domain.structures.Nodo;
 import app.ui.components.StatCard;
-import app.ui.components.ModernConfirmationDialog;
+import app.ui.components.modern.ModernConfirmationDialog;
 import app.infrastructure.shared.constants.Colors;
-import app.infrastructure.shared.SessionManager; // <-- Importar
 import app.ui.MainFrame; // <-- Importar
 
 import javax.swing.*;

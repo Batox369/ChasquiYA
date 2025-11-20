@@ -1,12 +1,13 @@
 package app.ui;
 
 import app.domain.model.*;
-import app.domain.repository.ZonaRepository;
+import app.domain.model.enums.EstadoConductor;
+import app.domain.model.enums.TripPhase;
 import app.domain.service.*;
 import app.infrastructure.persistence.ConexionBD;
-import app.ui.components.LoadingPanel;
+import app.ui.panels.LoadingPanel;
 import app.ui.panels.*;
-import app.ui.components.ModernMessageDialog;
+import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.views.SideNavigation;
 import app.ui.views.TopBar;

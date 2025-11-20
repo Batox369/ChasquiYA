@@ -1,6 +1,8 @@
 package app.domain.service;
 
 import app.domain.model.*;
+import app.domain.model.enums.EstadoConductor;
+import app.domain.model.enums.TripPhase;
 import app.ui.MainFrame;
 
 import javax.swing.Timer;
