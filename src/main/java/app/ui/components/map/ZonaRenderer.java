@@ -1,4 +1,4 @@
-package app.ui.components;
+package app.ui.components.map;
 
 import app.domain.model.Zona;
 import java.awt.*;

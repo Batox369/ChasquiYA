@@ -1,5 +1,8 @@
 package app.domain.model;
 
+import app.domain.model.enums.EstadoConductor;
+import app.domain.model.enums.TripPhase;
+
 import java.util.List;
 import java.util.Random;
 

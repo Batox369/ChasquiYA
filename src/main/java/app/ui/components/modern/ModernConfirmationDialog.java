@@ -1,11 +1,12 @@
-package app.ui.components;
+package app.ui.components.modern;
 
 import app.infrastructure.shared.constants.Colors;
+import app.ui.components.PrimaryButton;
+import app.ui.components.SecondaryButton;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionListener;
 
 public class ModernConfirmationDialog extends JDialog {
 

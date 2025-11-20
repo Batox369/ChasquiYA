@@ -1,17 +1,18 @@
 package app.ui.panels;
 
+import app.domain.model.enums.TripPhase;
 import app.infrastructure.shared.SessionManager;
 import app.domain.model.Viaje;
 import app.domain.service.GestorConductores;
 import app.domain.service.GestorRutas;
 import app.domain.service.SimuladorMovimientoConductores;
-import app.ui.components.MapMarker;
-import app.ui.components.RouteRenderer;
-import app.ui.components.ZonaRenderer; // Importa el renderer
+import app.ui.components.map.MapMarker;
+import app.ui.components.map.RouteRenderer;
+import app.ui.components.map.ZonaRenderer; // Importa el renderer
 import app.domain.model.*;
-import app.ui.components.ModernMessageDialog;
+import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
-import app.ui.components.ConductorRenderer;
+import app.ui.components.map.ConductorRenderer;
 import app.ui.MainFrame;
 import app.ui.views.TripSidebarPanel;
 

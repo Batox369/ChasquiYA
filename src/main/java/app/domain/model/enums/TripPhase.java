@@ -1,4 +1,4 @@
-package app.domain.model;
+package app.domain.model.enums;
 
 /**
  * Enum para gestionar las diferentes fases de un conductor durante un viaje asignado.

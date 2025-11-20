@@ -2,10 +2,10 @@ package app.ui.panels;
 
 import app.infrastructure.shared.constants.Colors;
 import app.ui.components.SmoothScrollPane;
-import app.ui.components.ModernTextField;
-import app.ui.components.ModernComboBox;
-import app.ui.components.ModernMessageDialog;
-import app.ui.components.ModernScrollBarUI;
+import app.ui.components.modern.ModernTextField;
+import app.ui.components.modern.ModernComboBox;
+import app.ui.components.modern.ModernMessageDialog;
+import app.ui.components.modern.ModernScrollBarUI;
 import app.ui.components.PrimaryButton;
 import app.domain.model.GrafoZonas;
 import app.domain.model.Zona;
@@ -13,7 +13,6 @@ import app.domain.repository.ConductorRepository;
 import app.domain.repository.GrafoRepository;
 import app.domain.service.GestorGrafos;
 import app.domain.service.GestorConductores;
-import app.domain.service.Sistema;
 import app.infrastructure.persistence.MySQLConductorRepository;
 import app.infrastructure.persistence.MySQLGrafoRepository;
 import app.ui.MainFrame;
@@ -24,7 +23,6 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.Collection;
 
 public class AdminMenuPanel extends JPanel {

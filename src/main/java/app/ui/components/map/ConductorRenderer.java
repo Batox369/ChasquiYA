@@ -1,8 +1,7 @@
-package app.ui.components;
+package app.ui.components.map;
 
 import app.domain.model.Coordenada;
 import app.domain.model.Conductor;
-import app.domain.model.Zona;
 
 import java.awt.*;
 import java.util.HashMap;

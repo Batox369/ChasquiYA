@@ -1,7 +1,7 @@
 package app.ui.views;
 
 import app.infrastructure.shared.constants.Colors;
-import app.ui.components.ModernButton;
+import app.ui.components.modern.ModernButton;
 
 import javax.swing.*;
 import java.awt.*;

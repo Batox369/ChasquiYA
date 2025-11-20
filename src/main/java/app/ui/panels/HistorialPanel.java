@@ -5,7 +5,7 @@ import app.domain.service.GestorHistorial;
 import app.domain.structures.ListaEnlazadaSimple;
 import app.domain.structures.Nodo;
 import app.ui.components.SmoothScrollPane;
-import app.ui.components.ModernScrollBarUI;
+import app.ui.components.modern.ModernScrollBarUI;
 import app.infrastructure.shared.constants.Colors;
 
 import javax.swing.*;
