@@ -16,7 +16,7 @@ import java.util.Random;
  */
 public class SimuladorMovimientoConductores {
 
-    private static final int VELOCIDAD_M_POR_S = 25; // 10 metros por segundo
+    private static final int VELOCIDAD_M_POR_S = 2; // 10 metros por segundo
     private static final int INTERVALO_ACTUALIZACION_MS = 10; // Actualiza la pantalla ~20 veces por segundo
 
     private final Timer timer;
