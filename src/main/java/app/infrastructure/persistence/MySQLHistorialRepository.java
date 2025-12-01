@@ -50,8 +50,8 @@ public class MySQLHistorialRepository implements HistorialRepository {
         ListaEnlazadaSimple<Viaje> historial = new ListaEnlazadaSimple<>();
         // Se ordena por fecha descendente para que los viajes más recientes aparezcan primero
         String sql = "SELECT hv.id, hv.id_conductor, hv.distancia_metros, hv.precio_calculado, hv.fecha_viaje, " +
-                     "zo.id as id_origen, zo.nombre as nombre_origen, zo.longitud as lon_origen, zo.latitud as lat_origen, " +
-                     "zd.id as id_destino, zd.nombre as nombre_destino, zd.longitud as lon_destino, zd.latitud as lat_destino " +
+                     "zo.id as id_origen, zo.nombre as nombre_origen, zo.longitud as lon_origen, zo.latitud as lat_origen, zo.visible as visible_origen, " +
+                     "zd.id as id_destino, zd.nombre as nombre_destino, zd.longitud as lon_destino, zd.latitud as lat_destino, zd.visible as visible_destino " +
                      "FROM historial_viajes hv " +
                      "JOIN zonas zo ON hv.id_zona_origen = zo.id " +
                      "JOIN zonas zd ON hv.id_zona_destino = zd.id " +
@@ -73,9 +73,9 @@ public class MySQLHistorialRepository implements HistorialRepository {
 
             while (rs.next()) {
                 // --- ¡CORRECCIÓN! ---
-                // 1. Creamos los objetos Zona de origen y destino por separado.
-                Zona origen = new Zona(rs.getInt("id_origen"), rs.getString("nombre_origen"), rs.getDouble("lon_origen"), rs.getDouble("lat_origen"));
-                Zona destino = new Zona(rs.getInt("id_destino"), rs.getString("nombre_destino"), rs.getDouble("lon_destino"), rs.getDouble("lat_destino"));
+                // 1. Creamos los objetos Zona usando el constructor que incluye la visibilidad.
+                Zona origen = new Zona(rs.getInt("id_origen"), rs.getString("nombre_origen"), rs.getDouble("lat_origen"), rs.getDouble("lon_origen"), rs.getBoolean("visible_origen"));
+                Zona destino = new Zona(rs.getInt("id_destino"), rs.getString("nombre_destino"), rs.getDouble("lat_destino"), rs.getDouble("lon_destino"), rs.getBoolean("visible_destino"));
 
                 // --- ¡CORRECCIÓN! ---
                 // 1. Usamos el constructor principal, que es más simple y seguro.

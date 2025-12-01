@@ -16,17 +16,25 @@ public class Zona {
     private double longitud;  // -50 a 50
     private double xMapa;     // coordenada escalada (en píxeles)
     private double yMapa;
+    private boolean visible;
 
     public Zona(int id, String nombre) {
         this.id = id;
         this.nombre = nombre;
         this.conductores = new CircularList();
+        this.visible = true; // Por defecto, una zona es visible
     }
 
-    public Zona(int id, String nombre, double latitud, double longitud) {
+    public Zona(int id, String nombre, double latitud, double longitud, boolean visible) {
         this(id, nombre);
         setLatitud(latitud);
         setLongitud(longitud);
+        this.visible = visible;
+    }
+
+    // --- ¡SOLUCIÓN! Constructor sobrecargado que asume 'visible = true' ---
+    public Zona(int id, String nombre, double latitud, double longitud) {
+        this(id, nombre, latitud, longitud, true);
     }
 
     // --- Getters y Setters ---
@@ -35,6 +43,7 @@ public class Zona {
 
     public double getLatitud() { return latitud; }
     public double getLongitud() { return longitud; }
+    public boolean isVisible() { return visible; }
 
     public void setLatitud(double latitud) {
         this.latitud = latitud;
@@ -42,6 +51,10 @@ public class Zona {
 
     public void setLongitud(double longitud) {
         this.longitud = longitud;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
     }
 
     public double getXMapa() { return xMapa; }

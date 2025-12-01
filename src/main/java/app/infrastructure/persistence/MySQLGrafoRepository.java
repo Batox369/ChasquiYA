@@ -14,7 +14,7 @@ public class MySQLGrafoRepository implements GrafoRepository {
     @Override
     public List<Zona> getTodasLasZonas() {
         List<Zona> zonas = new ArrayList<>();
-        String sql = "SELECT id, nombre, latitud, longitud FROM zonas";
+        String sql = "SELECT id, nombre, latitud, longitud, visible FROM zonas";
 
         // --- ¡CORRECCIÓN! ---
         // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
@@ -25,8 +25,9 @@ public class MySQLGrafoRepository implements GrafoRepository {
                 zonas.add(new Zona(
                         rs.getInt("id"),
                         rs.getString("nombre"),
-                        rs.getDouble("latitud"), // Usamos DOUBLE ahora
-                        rs.getDouble("longitud") // Usamos DOUBLE ahora
+                        rs.getDouble("latitud"),
+                        rs.getDouble("longitud"),
+                        rs.getBoolean("visible")
                 ));
             }
         } catch (SQLException e) {
@@ -58,13 +59,14 @@ public class MySQLGrafoRepository implements GrafoRepository {
     }
 
     @Override
-    public boolean addZona(String nombre, double x, double y) {
-        String sql = "INSERT INTO zonas (nombre, longitud, latitud) VALUES (?, ?, ?)";
+    public boolean addZona(String nombre, double x, double y, boolean visible) {
+        String sql = "INSERT INTO zonas (nombre, longitud, latitud, visible) VALUES (?, ?, ?, ?)";
         // Obtenemos la conexión compartida, pero NO la ponemos en el try-with-resources.
         try (PreparedStatement ps = ConexionBD.getInstance().getConnection().prepareStatement(sql)) {
             ps.setString(1, nombre);
             ps.setDouble(2, x); // Longitud = X (DOUBLE)
             ps.setDouble(3, y); // Latitud = Y (DOUBLE)
+            ps.setBoolean(4, visible);
             int affectedRows = ps.executeUpdate();
             return affectedRows > 0;
         } catch (SQLException e) {
@@ -90,6 +92,59 @@ public class MySQLGrafoRepository implements GrafoRepository {
 
             int affectedRows = ps.executeUpdate();
             return affectedRows > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteConexion(int idZonaA, int idZonaB) {
+        // Elimina la conexión en ambas direcciones para asegurar consistencia
+        String sql = "DELETE FROM zona_adyacencia WHERE (zona_origen_id = ? AND zona_destino_id = ?) OR (zona_origen_id = ? AND zona_destino_id = ?)";
+        try (PreparedStatement ps = ConexionBD.getInstance().getConnection().prepareStatement(sql)) {
+            ps.setInt(1, idZonaA);
+            ps.setInt(2, idZonaB);
+            ps.setInt(3, idZonaB);
+            ps.setInt(4, idZonaA);
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0; // Devuelve true si se eliminó al menos una fila
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteZona(int idZona) {
+        String deleteAdyacenciaSql = "DELETE FROM zona_adyacencia WHERE zona_origen_id = ? OR zona_destino_id = ?";
+        String deleteZonaSql = "DELETE FROM zonas WHERE id = ?";
+
+        try (Connection conn = ConexionBD.getInstance().getConnection()) {
+            // Desactivar auto-commit para manejar la transacción manualmente
+            conn.setAutoCommit(false);
+
+            try (PreparedStatement psAdyacencia = conn.prepareStatement(deleteAdyacenciaSql);
+                 PreparedStatement psZona = conn.prepareStatement(deleteZonaSql)) {
+
+                // Eliminar todas las conexiones relacionadas con la zona
+                psAdyacencia.setInt(1, idZona);
+                psAdyacencia.setInt(2, idZona);
+                psAdyacencia.executeUpdate();
+
+                // Eliminar la zona en sí
+                psZona.setInt(1, idZona);
+                int affectedRows = psZona.executeUpdate();
+
+                conn.commit(); // Confirmar la transacción
+                return affectedRows > 0;
+            } catch (SQLException e) {
+                conn.rollback(); // Revertir en caso de error
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true); // Restaurar auto-commit
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

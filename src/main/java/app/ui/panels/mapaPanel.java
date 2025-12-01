@@ -372,9 +372,12 @@ public class mapaPanel{
         // 3A. Dibujar Zonas (Nodos)
         if (grafoZonas != null) {
             for (Zona zona : grafoZonas.getZonas()) {
-                boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
-                // Llamamos al "Smart" Renderer
-                ZonaRenderer.drawZona(g2d, zona, seleccionada);
+                // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+                // Solo dibujamos la zona si es visible.
+                if (zona.isVisible()) {
+                    boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
+                    ZonaRenderer.drawZona(g2d, zona, seleccionada);
+                }
             }
         }
         if (rutaActual != null) {
