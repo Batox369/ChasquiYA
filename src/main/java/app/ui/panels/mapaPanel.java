@@ -78,7 +78,7 @@ public class mapaPanel{
     }
     private void loadImage() {
         try {
-            imagen = ImageIO.read(new File("src/main/resources/mapa.jpg"));
+            imagen = ImageIO.read(new File("src/main/resources/mapaunmsm.jpg"));
         } catch (Exception e) {
             e.printStackTrace();
             imagen = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
