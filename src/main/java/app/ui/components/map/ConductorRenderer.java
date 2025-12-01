@@ -1,8 +1,7 @@
-package app.ui.components;
+package app.ui.components.map;
 
 import app.domain.model.Coordenada;
 import app.domain.model.Conductor;
-import app.domain.model.Zona;
 
 import java.awt.*;
 import java.util.HashMap;
@@ -22,14 +21,7 @@ public class ConductorRenderer {
     public static void drawConductor(Graphics2D g2d, Conductor conductor) {
         Coordenada pos = conductor.getPosicionActual();
         if (pos == null) return; // No dibujar si el conductor no tiene posición
-
-        Color color = conductorColors.computeIfAbsent(conductor.getId(), id -> {
-            // Genera un color aleatorio pero consistente para cada conductor
-            float r = random.nextFloat();
-            float g = random.nextFloat();
-            float b = random.nextFloat();
-            return new Color(r, g, b);
-        });
+        Color color = getColorForConductor(conductor.getId());
 
         int x = (int) pos.getX();
         int y = (int) pos.getY();
@@ -39,5 +31,19 @@ public class ConductorRenderer {
         g2d.fillRect(x - size / 2, y - size / 2, size, size);
         g2d.setColor(Color.BLACK);
         g2d.drawRect(x - size / 2, y - size / 2, size, size);
+    }
+
+    /**
+     * Obtiene el color único y consistente para un conductor específico.
+     * Si el conductor no tiene un color asignado, se le genera uno nuevo.
+     * @param conductorId El ID del conductor.
+     * @return El color asignado.
+     */
+    public static Color getColorForConductor(int conductorId) {
+        return conductorColors.computeIfAbsent(conductorId, id -> {
+            // Genera un color aleatorio pero consistente para cada conductor
+            // Se evita el rojo y el verde puros para no confundir con origen/destino
+            return new Color(random.nextFloat(), random.nextFloat(), random.nextFloat());
+        });
     }
 }

@@ -10,10 +10,8 @@ public class Viaje {
     private int clienteId;
     private Integer conductorId;
     private int usuarioId; // Para el historial
-    private double precio; // Para el historial
-    private int zonaOrigenId; // <-- NUEVO
-    private int zonaDestinoId; // <-- NUEVO
-    private Date fecha; // Para el historial
+    private double precio;
+    private Date fecha;
 
     // === Campos del modelo ===
     private Coordenada origen;
@@ -31,8 +29,6 @@ public class Viaje {
         this.destino = new Coordenada(destino.getLongitud(), destino.getLatitud());
         this.nombreOrigen = nombreOrigen;
         this.nombreDestino = nombreDestino;
-        this.zonaOrigenId = origen.getId(); // Ahora es seguro y directo
-        this.zonaDestinoId = destino.getId(); // Ahora es seguro y directo
         this.estado = "PENDIENTE";
         this.fecha = new Date();
     }
@@ -40,16 +36,22 @@ public class Viaje {
     public Viaje(int idOrigen, String nombreOrigen, double lonOrigen, double latOrigen,
                  int idDestino, String nombreDestino, double lonDestino, double latDestino,
                  double distanciaMetros) {
-        // --- ¡CORRECCIÓN! ---
-        // Se instancia el tipo correcto 'Coordenada' en lugar de 'Zona'.
         this.fecha = new Date();
         this.origen = new Coordenada(lonOrigen, latOrigen);
         this.destino = new Coordenada(lonDestino, latDestino);
         this.nombreOrigen = nombreOrigen;
         this.nombreDestino = nombreDestino;
-        this.zonaOrigenId = idOrigen;
-        this.zonaDestinoId = idDestino;
         this.distanciaMetros = distanciaMetros; // <-- ¡CORRECCIÓN! Asegurarse de que se asigna.
+    }
+
+    /**
+     * Constructor específico para cargar un viaje desde el historial.
+     */
+    public Viaje(String nombreOrigen, String nombreDestino, double distanciaMetros) {
+        this.nombreOrigen = nombreOrigen;
+        this.nombreDestino = nombreDestino;
+        this.distanciaMetros = distanciaMetros;
+        this.estado = "COMPLETADO"; // Los viajes del historial siempre están completados
     }
 
     // === Métodos auxiliares existentes ===
@@ -59,6 +61,31 @@ public class Viaje {
             return String.format("%.2f km", distanciaMetros / 1000);
         }
         return String.format("%.0f m", distanciaMetros);
+    }
+
+    /**
+     * Calcula el tiempo estimado del viaje en segundos, basado en una velocidad promedio.
+     * @return El tiempo total en segundos.
+     */
+    private int calcularTiempoTotalEnSegundos() {
+        if (distanciaMetros == 0) return 0;
+        double velocidadPromedioKms = 40.0 / 3600.0; // Velocidad en km/s
+        double distanciaKm = this.distanciaMetros / 1000.0;
+        return (int) Math.ceil(distanciaKm / velocidadPromedioKms);
+    }
+
+    /**
+     * Devuelve el tiempo estimado del viaje formateado en minutos y segundos (ej: "8 min 15 s").
+     * @return Una cadena de texto con el tiempo formateado.
+     */
+    public String getTiempoEstimadoFormateado() {
+        int totalSegundos = calcularTiempoTotalEnSegundos();
+        if (totalSegundos == 0) return "-- min";
+
+        int minutos = totalSegundos / 60;
+        int segundos = totalSegundos % 60;
+
+        return String.format("%d min %d s", minutos, segundos);
     }
 
     // === Nuevo método para la ruta ===
@@ -85,12 +112,6 @@ public class Viaje {
 
     public Integer getConductorId() { return conductorId; }
     public void setConductorId(Integer conductorId) { this.conductorId = conductorId; }
-
-    public int getZonaOrigenId() { return zonaOrigenId; }
-    public void setZonaOrigenId(int zonaOrigenId) { this.zonaOrigenId = zonaOrigenId; }
-
-    public int getZonaDestinoId() { return zonaDestinoId; }
-    public void setZonaDestinoId(int zonaDestinoId) { this.zonaDestinoId = zonaDestinoId; }
 
     public Coordenada getOrigen() { return origen; }
     public void setOrigen(Coordenada origen) { this.origen = origen; }

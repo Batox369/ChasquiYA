@@ -4,7 +4,6 @@ import java.util.*;
 
 public class GrafoZonas {
     private final Map<Integer, Zona> zonas = new HashMap<>();
-    // Usamos Map<Zona, List<Conexion>> para representar el grafo
     private final Map<Zona, List<Conexion>> adyacencias = new HashMap<>();
 
     public void agregarZona(Zona zona) {
@@ -12,10 +11,12 @@ public class GrafoZonas {
         adyacencias.putIfAbsent(zona, new ArrayList<>());
     }
 
+    public void conectarZonas(Zona a, Zona b, double distancia, boolean trafico) {
+        adyacencias.get(a).add(new Conexion(b, distancia, trafico));
+        adyacencias.get(b).add(new Conexion(a, distancia, trafico));
+    }
     public void conectarZonas(Zona a, Zona b, double distancia) {
-        // Grafo no dirigido: la conexión es en ambos sentidos
-        adyacencias.get(a).add(new Conexion(b, distancia));
-        adyacencias.get(b).add(new Conexion(a, distancia));
+        conectarZonas(a, b, distancia, false);
     }
 
     public Zona getZona(int id) {
@@ -27,16 +28,23 @@ public class GrafoZonas {
     }
 
     public List<Conexion> getConexiones(Zona zona) {
-        // Devuelve una lista vacía si la zona no tiene conexiones para evitar errores
+
         return adyacencias.getOrDefault(zona, new ArrayList<>());
     }
 
     public static class Conexion {
         public final Zona destino;
         public final double distancia;
-        public Conexion(Zona destino, double distancia) {
+        private boolean trafico; // No es final para poder modificarlo
+
+        public Conexion(Zona destino, double distancia, boolean trafico) {
             this.destino = destino;
             this.distancia = distancia;
+            this.trafico = trafico;
+        }
+
+        public Conexion(Zona destino, double distancia) {
+            this(destino, distancia, false);
         }
 
         public Zona getDestino() {
@@ -47,6 +55,23 @@ public class GrafoZonas {
             return distancia;
         }
 
+        public boolean tieneTrafico() {
+            return trafico;
+        }
+
+        public void setTrafico(boolean trafico) {
+            this.trafico = trafico;
+        }
+
+    }
+
+    public Optional<Conexion> getConexionEntre(Zona origen, Zona destino) {
+        if (adyacencias.containsKey(origen)) {
+            return adyacencias.get(origen).stream()
+                    .filter(c -> c.getDestino().equals(destino))
+                    .findFirst();
+        }
+        return Optional.empty();
     }
 
     public double getDistanciaEntre(Zona a, Zona b) {

@@ -1,13 +1,21 @@
 package app.ui;
 
 import app.domain.model.*;
-import app.domain.repository.ZonaRepository;
+import app.domain.model.enums.EstadoConductor;
+import app.domain.model.enums.TripPhase;
 import app.domain.service.*;
+import app.domain.repository.ConductorRepository;
+import app.domain.repository.GrafoRepository;
 import app.infrastructure.persistence.ConexionBD;
+import app.ui.panels.LoadingPanel;
 import app.ui.panels.*;
+import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.views.SideNavigation;
 import app.ui.views.TopBar;
+import app.domain.structures.ListaEnlazadaSimple;
+import app.infrastructure.persistence.MySQLConductorRepository;
+import app.infrastructure.persistence.MySQLGrafoRepository;
 import app.ui.views.TripSidebarPanel;
 
 import java.util.List;
@@ -31,33 +39,123 @@ public class MainFrame extends JFrame {
     private SideNavigation sideNav;
     private TripSidebarPanel tripSidebar;
     private mapaPanel panelMapa;
-    private Sistema sistema;
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
     private PerfilPanel perfilPanel;
+    private EstadisticasPanel estadisticasPanel;
     private AdminMenuPanel adminPanel;
 
-    private boolean modoColocarZona = false; // <-- NUEVA VARIABLE DE ESTADO
+    private boolean modoColocarZona = false;
     private AdminMenuPanel panelAdminOrigen;
 
     private LoginPanel loginPanel;
     private RegisterPanel registerPanel;
     private JPanel welcomePanel;
 
-    ZonaRepository repo = new ZonaRepository();
-
-
-
     public MainFrame() {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1022, 704);
+        setSize(1122, 704);
         setLocationRelativeTo(null);
         setResizable(false);
-        setTitle("Sistema de Viajes");
+        setTitle("Movely");
 
-        sistema = Sistema.getInstancia();
-        initializeLayout();
-        
+        Toolkit t = Toolkit.getDefaultToolkit();
+        setIconImage(t.getImage(getClass().getResource("/soloLogo.png")));
+
+        LoadingPanel loadingPanel = new LoadingPanel();
+        setContentPane(loadingPanel);
+
+        new InitializationTask(loadingPanel).execute();
+    }
+
+    /**
+     * Tarea de fondo para inicializar los componentes pesados de la aplicación.
+     */
+    private class InitializationTask extends SwingWorker<Boolean, String> {
+        private LoadingPanel loadingPanel;
+
+        public InitializationTask(LoadingPanel loadingPanel) {
+            this.loadingPanel = loadingPanel;
+        }
+
+        @Override
+        protected Boolean doInBackground() throws Exception {
+            try {
+                publish("Estableciendo conexión...");
+                ConexionBD.getInstance().getConnection(); // Inicia la conexión a la BD
+
+                publish("Cargando mapa de zonas...");
+                GestorGrafos.getInstancia().getGrafo(); // Carga el grafo
+
+                publish("Preparando conductores...");
+                GestorConductores.getInstancia().cargarConductoresDesdeBD(); // Carga los conductores
+
+                publish("Finalizando...");
+                Thread.sleep(500); // Pequeña pausa para que se vea el último mensaje
+
+                return true; // Éxito
+            } catch (Exception e) {
+                publish("Error: " + e.getMessage());
+                e.printStackTrace();
+                return false; // Fracaso
+            }
+        }
+
+        @Override
+        protected void process(List<String> chunks) {
+            // Actualiza la UI con los mensajes de progreso
+            String lastMessage = chunks.get(chunks.size() - 1);
+            loadingPanel.setStatus(lastMessage);
+        }
+
+        @Override
+        protected void done() {
+            try {
+                if (get()) { // Si doInBackground() devolvió true (éxito)
+                    // 3. Configura la UI principal
+                    initializeMainUI();
+                    // 4. Decide si mostrar el login o el dashboard
+                    checkSessionAndNavigate();
+                } else {
+                    // Si hubo un error, muestra un diálogo y cierra la app
+                    JOptionPane.showMessageDialog(MainFrame.this, "No se pudo iniciar la aplicación. Verifique la conexión a la base de datos.", "Error Crítico", JOptionPane.ERROR_MESSAGE);
+                    System.exit(1);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+    }
+
+    private void initializeLayout() {
+        // ... (Tu código de initializeLayout() sin cambios) ...
+        mainFrame = new JPanel(new BorderLayout());
+        mainFrame.setBackground(Colors.SECONDARY);
+        topBar = new TopBar();
+        mainFrame.add(topBar, BorderLayout.NORTH);
+        JPanel centerPanel = new JPanel(new BorderLayout());
+        centerPanel.setBackground(Colors.SECONDARY);
+        leftPanel = new JPanel(new BorderLayout());
+        // El tamaño se establecerá dinámicamente al cambiar de vista
+        centerPanel.add(leftPanel, BorderLayout.WEST);
+        selectedPanel = new JPanel(new BorderLayout());
+        selectedPanel.setBackground(Colors.SECONDARY);
+        selectedPanel.setBorder(null); // Eliminamos cualquier borde del panel de contenido
+        centerPanel.add(selectedPanel, BorderLayout.CENTER);
+        mainFrame.add(centerPanel, BorderLayout.CENTER);
+        setContentPane(mainFrame);
+        adminPanel = new AdminMenuPanel(this);
+    }
+
+    private void initializeMainUI() {
+        initializeLayout(); // Configura el layout principal (paneles, topbar, etc.)
+        setContentPane(mainFrame); // Reemplaza el panel de carga por el panel principal
+        revalidate();
+        repaint();
+    }
+
+    private void checkSessionAndNavigate() {
         String savedUsername = SessionManager.getSavedUsername();
         if (savedUsername != null) {
             UsuarioRepository userRepo = new MySQLUsuarioRepository();
@@ -73,40 +171,21 @@ public class MainFrame extends JFrame {
         } else {
             navigateToLoginPanel();
         }
-
-        setVisible(true);
-    }
-
-    private void initializeLayout() {
-        // ... (Tu código de initializeLayout() sin cambios) ...
-        mainFrame = new JPanel(new BorderLayout());
-        mainFrame.setBackground(Colors.SECONDARY);
-        topBar = new TopBar();
-        mainFrame.add(topBar, BorderLayout.NORTH);
-        JPanel centerPanel = new JPanel(new BorderLayout());
-        centerPanel.setBackground(Colors.SECONDARY);
-        leftPanel = new JPanel(new BorderLayout());
-        leftPanel.setPreferredSize(new Dimension(250, 0));
-        centerPanel.add(leftPanel, BorderLayout.WEST);
-        selectedPanel = new JPanel(new BorderLayout());
-        selectedPanel.setBackground(Colors.SECONDARY);
-        selectedPanel.setBorder(null); // Eliminamos cualquier borde del panel de contenido
-        centerPanel.add(selectedPanel, BorderLayout.CENTER);
-        mainFrame.add(centerPanel, BorderLayout.CENTER);
-        setContentPane(mainFrame);
-        adminPanel = new AdminMenuPanel(this);
     }
 
     private void showGuestView(JPanel guestPanel) {
         leftPanel.removeAll();
         selectedPanel.removeAll();
 
+        // --- ¡SOLUCIÓN! Ajustamos el ancho para el panel de login/registro ---
+        leftPanel.setPreferredSize(new Dimension(350, 0));
+
         leftPanel.add(guestPanel, BorderLayout.CENTER);
 
         if (welcomePanel == null) {
             welcomePanel = new JPanel(new GridBagLayout());
             welcomePanel.setBackground(Colors.CARD_BG);
-            JLabel welcomeText = new JLabel("Bienvenido a ChasquiYa. Por favor, inicie sesión o regístrese.");
+            JLabel welcomeText = new JLabel("Bienvenido a Movely. Por favor, inicie sesión o regístrese.");
             welcomeText.setFont(new Font("Segoe UI", Font.PLAIN, 18));
             welcomeText.setForeground(Colors.TEXT_SECONDARY.darker());
             welcomePanel.add(welcomeText);
@@ -133,8 +212,20 @@ public class MainFrame extends JFrame {
         showGuestView(registerPanel);
     }
 
+    /**
+     * Maneja el cierre de sesión, limpiando la sesión y mostrando la vista de invitado.
+     */
+    public void doLogout() {
+        // 1. Borra la sesión guardada
+        SessionManager.clearSession();
+        // 2. Navega de vuelta al panel de login
+        navigateToLoginPanel();
+    }
+
     private void showDashboardView(Usuario user) {
-        sistema = Sistema.getInstancia();
+        // --- ¡SOLUCIÓN! Restauramos el ancho para la barra de navegación principal ---
+        leftPanel.setPreferredSize(new Dimension(280, 0));
+
         initializePanels();
         setupListeners();
         topBar.setUserName(user.getUsername());
@@ -156,7 +247,7 @@ public class MainFrame extends JFrame {
         this.modoColocarZona = true;
         this.panelAdminOrigen = panelOrigen;
         mostrarMapa(); // Muestra el mapa
-        JOptionPane.showMessageDialog(this, "Haz clic en el mapa para seleccionar la ubicación de la nueva zona.", "Modo Colocar Zona", JOptionPane.INFORMATION_MESSAGE);
+        new ModernMessageDialog(this, "Modo Colocar Zona", "Haz clic en el mapa para seleccionar la ubicación de la nueva zona.", ModernMessageDialog.MessageType.INFO).showDialog();
         // Cambiar cursor o indicar visualmente el modo
         panelMapa.getRootPanel().setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
     }
@@ -180,24 +271,19 @@ public class MainFrame extends JFrame {
         sideNav = new SideNavigation();
         tripSidebar = new TripSidebarPanel();
 
-        // --- ¡AQUÍ ESTÁ LA FORMA CORRECTA! ---
-        // 1. Obtén el grafo desde el Singleton GestorGrafos
         GrafoZonas grafo = GestorGrafos.getInstancia().getGrafo();
 
-        // 2. Crea una instancia del GestorRutas
         GestorRutas rutas = new GestorRutas();
 
-        // 3. Obtén la instancia del GestorConductores
         this.gestorConductores = GestorConductores.getInstancia();
-        this.asignadorDeViajes = new AsignadorDeViajes(); // <-- NUEVO
+        this.asignadorDeViajes = new AsignadorDeViajes();
 
-        // 4. Pasa TODAS las instancias correctas al constructor de mapaPanel
         panelMapa = new mapaPanel(this, tripSidebar, grafo, rutas, this.gestorConductores);
-        // --------
         
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         perfilPanel = new PerfilPanel(this);
+        estadisticasPanel = new EstadisticasPanel();
         adminPanel = new AdminMenuPanel(this);
     }
 
@@ -216,6 +302,12 @@ public class MainFrame extends JFrame {
             perfilPanel.actualizarEstadisticas(); // <-- ¡AQUÍ! Actualizamos los datos antes de mostrar
             mostrarMenuYPanel(perfilPanel);
             sideNav.setSelectedButton("perfil");
+        });
+        sideNav.addEstadisticasListener(e -> {
+            // Mostramos el panel inmediatamente, la carga se hará en segundo plano
+            mostrarMenuYPanel(estadisticasPanel);
+            cargarEstadisticasAsincrono(); // Iniciamos la carga
+            sideNav.setSelectedButton("estadisticas");
         });
         sideNav.addAdminListener(e -> {
             mostrarAdminMenu();
@@ -357,6 +449,44 @@ public class MainFrame extends JFrame {
             }
         };
 
+        worker.execute();
+    }
+
+    public void cargarEstadisticasAsincrono() {
+        // No creamos una nueva instancia, usamos la que ya existe para mantener el estado.
+        estadisticasPanel.mostrarLoading();
+        SwingWorker<ListaEnlazadaSimple<?>[], Void> worker = new SwingWorker<>() {
+            @Override
+            protected ListaEnlazadaSimple<?>[] doInBackground() throws Exception {
+                // --- ¡LÓGICA CORREGIDA! ---
+                // La carga de datos se hace aquí, en un hilo separado para no congelar la UI.
+                ConductorRepository conductorRepo = new MySQLConductorRepository();
+                ListaEnlazadaSimple<Conductor> topConductores = conductorRepo.getTopConductores(5);
+
+                GrafoRepository grafoRepo = new MySQLGrafoRepository();
+                ListaEnlazadaSimple<Zona> topZonas = grafoRepo.getTopZonas(5);
+
+                return new ListaEnlazadaSimple[]{topConductores, topZonas};
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    // Cuando termina, actualizamos la UI en el hilo de eventos de Swing.
+                    ListaEnlazadaSimple<?>[] resultados = get();
+                    ListaEnlazadaSimple<Conductor> topConductores = (ListaEnlazadaSimple<Conductor>) resultados[0];
+                    ListaEnlazadaSimple<Zona> topZonas = (ListaEnlazadaSimple<Zona>) resultados[1];
+
+                    // Nos aseguramos de que la actualización ocurra en el hilo de eventos de Swing
+                    SwingUtilities.invokeLater(() -> {
+                        estadisticasPanel.refrescarEstadisticas(topConductores, topZonas);
+                        estadisticasPanel.ocultarLoading();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
         worker.execute();
     }
 

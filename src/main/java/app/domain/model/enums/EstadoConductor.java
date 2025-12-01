@@ -1,4 +1,4 @@
-package app.domain.model;
+package app.domain.model.enums;
 
 public enum EstadoConductor {
     DISPONIBLE,

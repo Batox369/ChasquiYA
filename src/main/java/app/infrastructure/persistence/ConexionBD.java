@@ -15,7 +15,6 @@ public class ConexionBD {
 
     private static ConexionBD instance;
 
-    // Constructor privado (SINGLETON)
     private ConexionBD() {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -32,9 +31,6 @@ public class ConexionBD {
         }
         return instance;
     }
-
-    // ❌ YA NO guarda la conexión adentro
-    // ✔ Crea una NUEVA conexión cada vez que se llame
     public Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }

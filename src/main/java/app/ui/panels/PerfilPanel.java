@@ -4,8 +4,8 @@ import app.domain.model.Viaje;
 import app.domain.service.GestorHistorial;
 import app.domain.structures.Nodo;
 import app.ui.components.StatCard;
+import app.ui.components.modern.ModernConfirmationDialog;
 import app.infrastructure.shared.constants.Colors;
-import app.infrastructure.shared.SessionManager; // <-- Importar
 import app.ui.MainFrame; // <-- Importar
 
 import javax.swing.*;
@@ -64,26 +64,11 @@ public class PerfilPanel extends JPanel {
 
         // --- 3. Acción del Botón (NUEVO) ---
         btnCerrarSesion.addActionListener(e -> {
-            int confirm = JOptionPane.showConfirmDialog(
-                    mainFrame,
-                    "¿Estás seguro de que quieres cerrar sesión?",
-                    "Confirmar Cierre de Sesión",
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE
-            );
+            ModernConfirmationDialog dialog = new ModernConfirmationDialog(mainFrame, "Confirmar Cierre de Sesión", "¿Estás seguro de que quieres cerrar sesión?");
+            boolean confirmed = dialog.showDialog();
 
-            if (confirm == JOptionPane.YES_OPTION) {
-                // 1. Borra la sesión guardada
-                SessionManager.clearSession();
-
-                // 2. Cierra esta ventana (MainFrame)
-                mainFrame.dispose();
-
-                // 3. Abre una nueva instancia (que mostrará el login)
-                // Usamos SwingUtilities para asegurar que se haga en el hilo de UI
-                SwingUtilities.invokeLater(() -> {
-                    new MainFrame();
-                });
+            if (confirmed) {
+                mainFrame.doLogout(); // <-- ¡SOLUCIÓN! Llama al nuevo método del MainFrame
             }
         });
     }

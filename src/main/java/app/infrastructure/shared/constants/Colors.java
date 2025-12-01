@@ -8,6 +8,7 @@ public class Colors {
     public static final Color SECONDARY = new Color(241, 245, 249);
     public static final Color ACCENT = new Color(249, 115, 22);
     public static final Color PRIMARY_DARK = new Color(30, 90, 200);
+    public static final Color PRIMARY_DARK2 = new Color(35, 93, 220);
     // Fondos
     public static final Color DARK_BG = new Color(15, 23, 42);
     public static final Color CARD_BG = new Color(255, 255, 255);

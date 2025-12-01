@@ -4,7 +4,8 @@ import app.domain.model.Viaje;
 import app.domain.service.GestorHistorial;
 import app.domain.structures.ListaEnlazadaSimple;
 import app.domain.structures.Nodo;
-import app.ui.components.ModernScrollBarUI;
+import app.ui.components.SmoothScrollPane;
+import app.ui.components.modern.ModernScrollBarUI;
 import app.infrastructure.shared.constants.Colors;
 
 import javax.swing.*;
@@ -40,7 +41,7 @@ public class HistorialPanel extends JPanel {
         listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
         listPanel.setBackground(Colors.CARD_BG);
 
-        JScrollPane scrollPane = new JScrollPane(listPanel);
+        JScrollPane scrollPane = new SmoothScrollPane(listPanel);
         scrollPane.setBorder(null);
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

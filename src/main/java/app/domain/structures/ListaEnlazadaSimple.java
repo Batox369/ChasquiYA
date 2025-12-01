@@ -1,10 +1,5 @@
 package app.domain.structures;
 
-/**
- * Implementación de una lista enlazada simple.
- * Los nuevos elementos se agregan al inicio.
- * @param <T> El tipo de dato que almacena la lista.
- */
 public class ListaEnlazadaSimple<T> {
     private Nodo<T> cabeza;
     private int tamano;
@@ -14,10 +9,6 @@ public class ListaEnlazadaSimple<T> {
         this.tamano = 0;
     }
 
-    /**
-     * Agrega un nuevo elemento al inicio de la lista.
-     * @param dato El dato a agregar.
-     */
     public void agregarAlInicio(T dato) {
         Nodo<T> nuevoNodo = new Nodo<>(dato);
         nuevoNodo.siguiente = this.cabeza;

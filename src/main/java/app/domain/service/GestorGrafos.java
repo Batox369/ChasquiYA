@@ -71,9 +71,9 @@ public class GestorGrafos {
 
         // Verifica si se cargaron zonas antes de imprimir el mensaje
         if (grafo.getZonas() != null) {
-            System.out.println("✅ Grafo cargado en memoria con " + grafo.getZonas().size() + " nodos.");
+            System.out.println("Grafo cargado en memoria con " + grafo.getZonas().size() + " nodos.");
         } else {
-            System.out.println("✅ Grafo inicializado (vacío o error al cargar nodos).");
+            System.out.println("Grafo inicializado (vacío o error al cargar nodos).");
         }
     }
 

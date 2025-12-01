@@ -1,9 +1,12 @@
 package app.ui.views;
 
+import app.domain.model.Conductor;
 import app.domain.model.Viaje;
 import app.domain.model.Coordenada;
 import app.infrastructure.shared.constants.Colors;
 import app.infrastructure.shared.constants.UIFonts;
+import app.ui.components.ColorSwatch;
+import app.ui.components.map.ConductorRenderer;
 import app.infrastructure.shared.constants.*;
 
 
@@ -22,6 +25,7 @@ public class TripSidebarPanel extends JPanel {
     private JButton cancelarButton;
     private JPanel asignandoPanel; // <-- NUEVO: Panel para el estado "Asignando"
     private JPanel conductorPanel; // <-- NUEVO: Panel para mostrar al conductor asignado
+    private ColorSwatch conductorColorSwatch; // <-- ¡NUEVO! Para mostrar el color
 
     private Viaje viajeActual;
 
@@ -240,6 +244,14 @@ public class TripSidebarPanel extends JPanel {
         conductorPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         conductorPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
+        // --- ¡NUEVO! ---
+        // Panel para el nombre que incluirá el swatch de color
+        JPanel nombreConductorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        nombreConductorPanel.setOpaque(false);
+
+        conductorColorSwatch = new ColorSwatch();
+        nombreConductorPanel.add(conductorColorSwatch);
+
         // Reutilizamos el método createInfoLabel para mantener la consistencia
         JPanel nombrePanel = createInfoLabel("👤 Conductor", "...");
         conductorPanel.add(nombrePanel);
@@ -247,6 +259,9 @@ public class TripSidebarPanel extends JPanel {
 
         JPanel placaPanel = createInfoLabel("    Placa", "...");
         conductorPanel.add(placaPanel);
+
+        // Añadimos el swatch al panel del nombre
+        nombrePanel.add(nombreConductorPanel, BorderLayout.WEST);
 
         conductorPanel.setVisible(false); // Oculto por defecto
         add(conductorPanel);
@@ -263,7 +278,7 @@ public class TripSidebarPanel extends JPanel {
         asignandoPanel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
 
         JLabel asignandoLabel = new JLabel("Asignando conductor...");
-        asignandoLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        asignandoLabel.setFont(new Font("SansSerif", Font.BOLD, 14));
         asignandoLabel.setForeground(Colors.SUCCESS);
         asignandoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
@@ -275,9 +290,6 @@ public class TripSidebarPanel extends JPanel {
     public void actualizarViaje(Viaje viaje) {
         this.viajeActual = viaje;
 
-        Coordenada origen = viaje.getOrigen();
-        Coordenada destino = viaje.getDestino();
-
         origenLabel.setText(viaje.getNombreOrigen());
         origenLabel.setForeground(Colors.SUCCESS);
 
@@ -286,10 +298,10 @@ public class TripSidebarPanel extends JPanel {
 
         updateInfoValue(distanciaPanel, viaje.getDistanciaFormateada());
 
-        int tiempo = calcularTiempo(viaje.getDistanciaMetros());
-        updateInfoValue(tiempoPanel, tiempo + " min");
+        // --- ¡CORRECCIÓN! Ahora le pedimos al objeto Viaje que nos dé el tiempo formateado. ---
+        updateInfoValue(tiempoPanel, viaje.getTiempoEstimadoFormateado());
 
-        double precio = calcularPrecio(viaje.getDistanciaMetros());
+        double precio = calcularPrecio(viaje.getDistanciaMetros()); // Mantendremos el precio aquí por ahora
         updateInfoValue(precioPanel, String.format("S/ %.2f", precio));
 
         solicitarButton.setEnabled(true);
@@ -302,15 +314,9 @@ public class TripSidebarPanel extends JPanel {
         }
     }
 
-    private int calcularTiempo(double distanciaMetros) {
-        double velocidadKmH = 40.0;
-        double distanciaKm = distanciaMetros / 1000;
-        return (int) Math.ceil((distanciaKm / velocidadKmH) * 60);
-    }
-
     private double calcularPrecio(double distanciaMetros) {
-        double tarifaBase = 5.0;
-        double costoPorKm = 2.5;
+        double tarifaBase = 4.2;
+        double costoPorKm = 1.8;
         double distanciaKm = distanciaMetros / 1000;
         return tarifaBase + (distanciaKm * costoPorKm);
     }
@@ -333,7 +339,7 @@ public class TripSidebarPanel extends JPanel {
         solicitarButton.setVisible(true);
         asignandoPanel.setVisible(false);
         conductorPanel.setVisible(false); // Ocultamos también el panel del conductor
-
+        cancelarButton.setVisible(true);
         viajeActual = null;
     }
 
@@ -355,8 +361,13 @@ public class TripSidebarPanel extends JPanel {
      * Muestra la información del conductor que ha sido asignado al viaje.
      * @param conductor El conductor asignado.
      */
-    public void mostrarConductorAsignado(app.domain.model.Conductor conductor) {
+    public void mostrarConductorAsignado(Conductor conductor) {
         asignandoPanel.setVisible(false); // Ocultamos "Asignando..."
+
+        // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+        // 1. Obtenemos el color del conductor usando la misma lógica que el mapa.
+        Color color = ConductorRenderer.getColorForConductor(conductor.getId());
+        conductorColorSwatch.setColor(color);
 
         // Actualizamos los valores usando el mismo método que para el resto de la info
         updateInfoValue((JPanel) conductorPanel.getComponent(0), conductor.getNombreCompleto());

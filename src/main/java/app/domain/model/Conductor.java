@@ -1,5 +1,8 @@
 package app.domain.model;
 
+import app.domain.model.enums.EstadoConductor;
+import app.domain.model.enums.TripPhase;
+
 import java.util.List;
 import java.util.Random;
 
@@ -21,6 +24,7 @@ public class Conductor {
     // --- Atributos para el ciclo de vida del viaje ---
     private TripPhase tripPhase = TripPhase.NONE;
     private long waitStartTimeMs;
+    private int viajesRealizados;
     
     // --- Fin de atributos de simulación ---
 
@@ -37,6 +41,7 @@ public class Conductor {
         this.placaVehiculo = placaVehiculo;
         this.estado = estado;
         this.zonaActualId = zonaActualId;
+        this.viajesRealizados = 0; // Inicializamos en 0
     }
 
     // --- Getters y Setters ---
@@ -129,6 +134,14 @@ public class Conductor {
 
     public void setWaitStartTimeMs(long waitStartTimeMs) {
         this.waitStartTimeMs = waitStartTimeMs;
+    }
+
+    public int getViajesRealizados() {
+        return viajesRealizados;
+    }
+
+    public void setViajesRealizados(int viajesRealizados) {
+        this.viajesRealizados = viajesRealizados;
     }
     
     /**

@@ -1,16 +1,19 @@
 package app.ui.panels;
 
+import app.domain.model.enums.TripPhase;
 import app.infrastructure.shared.SessionManager;
 import app.domain.model.Viaje;
 import app.domain.service.GestorConductores;
 import app.domain.service.GestorRutas;
 import app.domain.service.SimuladorMovimientoConductores;
-import app.ui.components.MapMarker;
-import app.ui.components.RouteRenderer;
-import app.ui.components.ZonaRenderer; // Importa el renderer
+import app.ui.components.map.MapMarker;
+import app.ui.components.map.RouteRenderer;
+import app.ui.components.map.ZonaRenderer; // Importa el renderer
+import app.ui.components.map.AristaRenderer; // Importa el nuevo renderer
 import app.domain.model.*;
+import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
-import app.ui.components.ConductorRenderer;
+import app.ui.components.map.ConductorRenderer;
 import app.ui.MainFrame;
 import app.ui.views.TripSidebarPanel;
 
@@ -52,6 +55,10 @@ public class mapaPanel{
     private Zona zonaDestino;
     private java.util.List<Zona> rutaActual;
     private List<Conductor> conductores;
+    // --- ¡NUEVO! Banderas para controlar la visualización de admin ---
+    private boolean aristasVisibles = false;
+    private boolean nodosInvisiblesVisibles = false;
+
     private SimuladorMovimientoConductores simulador;
 
     public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas, GestorConductores gestorConductores) {
@@ -71,12 +78,12 @@ public class mapaPanel{
             checkTripStatusAndUpdateSidebar(); // Revisa el estado del viaje en cada tick
             mapaCanvas.repaint();
         };
-        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, this.grafoZonas, updateAction);
+        this.simulador = new SimuladorMovimientoConductores(this.mainFrame, this.conductores, updateAction);
         this.simulador.start();
     }
     private void loadImage() {
         try {
-            imagen = ImageIO.read(new File("src/main/resources/mapa.jpg"));
+            imagen = ImageIO.read(new File("src/main/resources/MapaED.jpg"));
         } catch (Exception e) {
             e.printStackTrace();
             imagen = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
@@ -231,10 +238,7 @@ public class mapaPanel{
 
             // 7. Validar la ruta (una ruta válida debe tener al menos 2 zonas)
             if (rutaActual == null || rutaActual.size() < 2) {
-                JOptionPane.showMessageDialog(rootPanel,
-                        "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(),
-                        "Ruta no encontrada",
-                        JOptionPane.ERROR_MESSAGE);
+                new ModernMessageDialog(mainFrame, "Ruta no encontrada", "No se encontró una ruta entre " + zonaOrigen.getNombre() + " y " + zonaDestino.getNombre(), ModernMessageDialog.MessageType.ERROR).showDialog();
                 // ¡ARREGLO! Si la ruta falla, reseteamos AMBAS zonas para no quedarnos atascados.
                 zonaOrigen = null;  // <-- AÑADIR ESTA LÍNEA
                 zonaDestino = null; // Esta línea ya estaba, la dejamos.
@@ -260,7 +264,7 @@ public class mapaPanel{
             viajeActual.setDistanciaMetros(distanciaTotalRuta); // El peso ya debería ser la distancia en metros
 
             double tarifaBase = 5.0;
-            double costoPorKm = 2.5;
+            double costoPorKm = 3.5;
             double distanciaKm = distanciaTotalRuta / 1000;
 
             double precioCalculado = tarifaBase + (distanciaKm * costoPorKm);
@@ -295,6 +299,13 @@ public class mapaPanel{
         double umbral = 80 / zoom;
 
         for (Zona zona : grafoZonas.getZonas()) {
+            // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+            // Si la zona no es visible, la ignoramos y pasamos a la siguiente,
+            // A MENOS QUE el admin haya activado la opción de ver nodos invisibles.
+            if (!zona.isVisible()) {
+                continue;
+            }
+
             // Comparamos las coordenadas del "mundo"
             double zonaX = zona.getLongitud(); // Asumiendo X
             double zonaY = zona.getLatitud();  // Asumiendo Y
@@ -368,14 +379,32 @@ public class mapaPanel{
         // --- 2. DIBUJAR IMAGEN DE FONDO ---
         g2d.drawImage(imagen, 0, 0, null);
 
-        // --- 3. DIBUJAR EL GRAFO (RUTAS Y ZONAS) ---
+        // --- ¡NUEVO! Dibujar TODAS las aristas si la opción de admin está activada ---
+        if (aristasVisibles && grafoZonas != null) {
+            java.util.Set<String> aristasDibujadas = new java.util.HashSet<>();
+            for (Zona zona : grafoZonas.getZonas()) {
+                for (GrafoZonas.Conexion conexion : grafoZonas.getConexiones(zona)) {
+                    Zona destino = conexion.getDestino();
+                    // Creamos una clave única para no dibujar la arista dos veces
+                    String claveArista = zona.getId() < destino.getId() ? zona.getId() + "-" + destino.getId() : destino.getId() + "-" + zona.getId();
+                    if (!aristasDibujadas.contains(claveArista)) {
+                        AristaRenderer.drawArista(g2d, zona, conexion, true); // true para mostrar el peso
+                        aristasDibujadas.add(claveArista);
+                    }
+                }
+            }
+        }
 
-        // 3A. Dibujar Zonas (Nodos)
+        // 3. Dibujar Zonas (Nodos)
         if (grafoZonas != null) {
             for (Zona zona : grafoZonas.getZonas()) {
-                boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
-                // Llamamos al "Smart" Renderer
-                ZonaRenderer.drawZona(g2d, zona, seleccionada);
+                // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+                // Solo dibujamos la zona si es visible, o si el admin activó la vista especial.
+                if (zona.isVisible() || nodosInvisiblesVisibles) {
+                    boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
+                    // Pasamos un flag extra para que el renderer sepa si debe dibujarla de forma especial
+                    ZonaRenderer.drawZona(g2d, zona, seleccionada, !zona.isVisible());
+                }
             }
         }
         if (rutaActual != null) {
@@ -473,13 +502,19 @@ public class mapaPanel{
     }
 
     public void actualizarGrafo(GrafoZonas nuevoGrafo) {
+        // --- ¡SOLUCIÓN! ---
+        // Simplemente actualizamos la referencia al grafo y forzamos un repintado.
+        // Ya no llamamos a resetearMapa() para no borrar la selección del usuario.
         this.grafoZonas = nuevoGrafo;
-        resetearMapa(); // Limpia selecciones y repinta el canvas
-        System.out.println("mapaPanel: Grafo actualizado y mapa repintado.");
+        resetearMapa();
+        System.out.println("mapaPanel: Grafo actualizado para reflejar cambios (ej. tráfico).");
     }
 
     public void actualizarConductores(List<Conductor> nuevosConductores) {
         this.conductores = nuevosConductores;
+        // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
+        // Notificamos también al simulador sobre la nueva lista de conductores.
+        if (this.simulador != null) this.simulador.setConductores(nuevosConductores);
         mapaCanvas.repaint();
         System.out.println("mapaPanel: Lista de conductores actualizada y mapa repintado.");
     }
@@ -494,5 +529,27 @@ public class mapaPanel{
     public void setTripActive() {
         this.isTripActive = true;
         mapaCanvas.setCursor(Cursor.getDefaultCursor()); // Cambia el cursor para indicar que no se puede interactuar
+    }
+
+    public void repaintMapa() {
+        if (mapaCanvas != null) mapaCanvas.repaint();
+    }
+
+    /**
+     * Establece si todas las aristas del grafo deben ser visibles.
+     * @param visible true para mostrar todas las aristas, false para ocultarlas.
+     */
+    public void setAristasVisibles(boolean visible) {
+        this.aristasVisibles = visible;
+        repaintMapa();
+    }
+
+    /**
+     * Establece si los nodos marcados como invisibles deben ser visibles (modo admin).
+     * @param visible true para mostrar los nodos invisibles, false para ocultarlos.
+     */
+    public void setNodosInvisiblesVisibles(boolean visible) {
+        this.nodosInvisiblesVisibles = visible;
+        repaintMapa();
     }
 }
