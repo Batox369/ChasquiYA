@@ -94,6 +94,7 @@ public class AdminMenuPanel extends JPanel {
         titlePanel.add(title);
 
         header.add(titlePanel, BorderLayout.WEST);
+
         return header;
     }
 

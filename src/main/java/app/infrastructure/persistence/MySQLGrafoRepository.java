@@ -1,6 +1,9 @@
 package app.infrastructure.persistence;
 
 import app.domain.model.Arista;
+import app.domain.model.Conductor;
+import app.domain.model.Coordenada;
+import app.domain.repository.ConductorRepository;
 import app.domain.model.Zona;
 import app.domain.repository.GrafoRepository;
 
@@ -49,7 +52,7 @@ public class MySQLGrafoRepository implements GrafoRepository {
                 aristas.add(new Arista(
                         rs.getInt("zona_origen_id"), // Corregido: usa los nombres de columna correctos
                         rs.getInt("zona_destino_id"), // Corregido: usa los nombres de columna correctos
-                        rs.getDouble("peso")         // Corregido: usa el nombre de columna correcto
+                        rs.getDouble("peso")
                 ));
             }
         } catch (SQLException e) {
@@ -119,6 +122,7 @@ public class MySQLGrafoRepository implements GrafoRepository {
     public boolean deleteZona(int idZona) {
         String deleteAdyacenciaSql = "DELETE FROM zona_adyacencia WHERE zona_origen_id = ? OR zona_destino_id = ?";
         String deleteZonaSql = "DELETE FROM zonas WHERE id = ?";
+        ConductorRepository conductorRepo = new MySQLConductorRepository();
 
         try (Connection conn = ConexionBD.getInstance().getConnection()) {
             // Desactivar auto-commit para manejar la transacción manualmente
@@ -126,6 +130,36 @@ public class MySQLGrafoRepository implements GrafoRepository {
 
             try (PreparedStatement psAdyacencia = conn.prepareStatement(deleteAdyacenciaSql);
                  PreparedStatement psZona = conn.prepareStatement(deleteZonaSql)) {
+
+                // --- ¡NUEVA LÓGICA DE REUBICACIÓN! ---
+                // 1. Encontrar conductores en la zona a eliminar.
+                List<Conductor> conductoresAfectados = conductorRepo.findByZonaId(idZona);
+                List<Zona> zonasRestantes = getTodasLasZonas();
+                zonasRestantes.removeIf(z -> z.getId() == idZona); // Quita la zona que se va a eliminar
+
+                if (!conductoresAfectados.isEmpty()) {
+                    if (zonasRestantes.isEmpty()) {
+                        // Caso extremo: no hay más zonas, se eliminan los conductores.
+                        System.out.println("[WARN] No hay zonas restantes. Eliminando conductores de la zona " + idZona);
+                        for (Conductor conductor : conductoresAfectados) {
+                            conductorRepo.delete(conductor.getId());
+                        }
+                    } else {
+                        // Caso normal: reubicar conductores a la zona más cercana.
+                        Zona zonaEliminada = getTodasLasZonas().stream().filter(z -> z.getId() == idZona).findFirst().orElse(null);
+                        if (zonaEliminada != null) {
+                            for (Conductor conductor : conductoresAfectados) {
+                                Zona zonaMasCercana = encontrarZonaMasCercana(zonaEliminada, zonasRestantes);
+                                if (zonaMasCercana != null) {
+                                    System.out.printf("[LOGIC] Reubicando conductor %s de zona eliminada %d a la zona más cercana %d%n",
+                                            conductor.getNombreCompleto(), idZona, zonaMasCercana.getId());
+                                    conductorRepo.updateZona(conductor.getId(), zonaMasCercana.getId());
+                                }
+                            }
+                        }
+                    }
+                }
+                // --- FIN DE LA LÓGICA DE REUBICACIÓN ---
 
                 // Eliminar todas las conexiones relacionadas con la zona
                 psAdyacencia.setInt(1, idZona);
@@ -149,5 +183,24 @@ public class MySQLGrafoRepository implements GrafoRepository {
             e.printStackTrace();
             return false;
         }
+    }
+
+    /**
+     * Método de ayuda para encontrar la zona más cercana a una zona dada,
+     * basado en la distancia euclidiana de sus coordenadas.
+     */
+    private Zona encontrarZonaMasCercana(Zona origen, List<Zona> candidatas) {
+        Zona masCercana = null;
+        double distanciaMinima = Double.MAX_VALUE;
+        Coordenada coordOrigen = new Coordenada(origen.getLongitud(), origen.getLatitud());
+
+        for (Zona candidata : candidatas) {
+            double distancia = coordOrigen.calcularDistancia(new Coordenada(candidata.getLongitud(), candidata.getLatitud()));
+            if (distancia < distanciaMinima) {
+                distanciaMinima = distancia;
+                masCercana = candidata;
+            }
+        }
+        return masCercana;
     }
 }

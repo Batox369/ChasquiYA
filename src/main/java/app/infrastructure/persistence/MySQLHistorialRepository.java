@@ -1,6 +1,5 @@
 package app.infrastructure.persistence;
 
-import app.domain.model.Zona;
 import app.domain.model.Viaje;
 import app.domain.repository.HistorialRepository;
 import app.domain.structures.ListaEnlazadaSimple;
@@ -11,7 +10,7 @@ public class MySQLHistorialRepository implements HistorialRepository {
 
     @Override
     public boolean guardarViaje(Viaje viaje) {
-        String sql = "INSERT INTO historial_viajes (id_usuario, id_conductor, id_zona_origen, id_zona_destino, distancia_metros, precio_calculado, fecha_viaje) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO historial_viajes (id_usuario, id_conductor, zona_origen, zona_destino, distancia_metros, precio_calculado, fecha_viaje) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
         // Obtenemos la conexión compartida ANTES del try-with-resources
         Connection connection = null;
@@ -28,13 +27,11 @@ public class MySQLHistorialRepository implements HistorialRepository {
             pstmt.setInt(1, viaje.getUsuarioId());
             pstmt.setInt(2, viaje.getConductorId());
 
-            // --- ¡CORRECCIÓN! --- Usamos los nuevos getters para los IDs.
-            pstmt.setInt(3, viaje.getZonaOrigenId());
-            pstmt.setInt(4, viaje.getZonaDestinoId());
-
+            pstmt.setString(3, viaje.getNombreOrigen());
+            pstmt.setString(4, viaje.getNombreDestino());
             pstmt.setDouble(5, viaje.getDistanciaMetros());
             pstmt.setDouble(6, viaje.getPrecio());
-            pstmt.setTimestamp(7, new Timestamp(System.currentTimeMillis()));
+            pstmt.setTimestamp(7, new Timestamp(viaje.getFecha().getTime()));
 
             int affectedRows = pstmt.executeUpdate();
             return affectedRows > 0;
@@ -49,13 +46,8 @@ public class MySQLHistorialRepository implements HistorialRepository {
     public ListaEnlazadaSimple<Viaje> getHistorialPorUsuario(int idUsuario) {
         ListaEnlazadaSimple<Viaje> historial = new ListaEnlazadaSimple<>();
         // Se ordena por fecha descendente para que los viajes más recientes aparezcan primero
-        String sql = "SELECT hv.id, hv.id_conductor, hv.distancia_metros, hv.precio_calculado, hv.fecha_viaje, " +
-                     "zo.id as id_origen, zo.nombre as nombre_origen, zo.longitud as lon_origen, zo.latitud as lat_origen, zo.visible as visible_origen, " +
-                     "zd.id as id_destino, zd.nombre as nombre_destino, zd.longitud as lon_destino, zd.latitud as lat_destino, zd.visible as visible_destino " +
-                     "FROM historial_viajes hv " +
-                     "JOIN zonas zo ON hv.id_zona_origen = zo.id " +
-                     "JOIN zonas zd ON hv.id_zona_destino = zd.id " +
-                     "WHERE hv.id_usuario = ? ORDER BY hv.fecha_viaje DESC";
+        String sql = "SELECT id, id_conductor, distancia_metros, precio_calculado, fecha_viaje, zona_origen, zona_destino " +
+                     "FROM historial_viajes WHERE id_usuario = ? ORDER BY fecha_viaje DESC";
 
         // Obtenemos la conexión compartida ANTES del try-with-resources
         Connection connection = null;
@@ -72,26 +64,21 @@ public class MySQLHistorialRepository implements HistorialRepository {
             ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
-                // --- ¡CORRECCIÓN! ---
-                // 1. Creamos los objetos Zona usando el constructor que incluye la visibilidad.
-                Zona origen = new Zona(rs.getInt("id_origen"), rs.getString("nombre_origen"), rs.getDouble("lat_origen"), rs.getDouble("lon_origen"), rs.getBoolean("visible_origen"));
-                Zona destino = new Zona(rs.getInt("id_destino"), rs.getString("nombre_destino"), rs.getDouble("lat_destino"), rs.getDouble("lon_destino"), rs.getBoolean("visible_destino"));
+                // Usamos el nuevo constructor para cargar desde el historial
+                Viaje viaje = new Viaje(
+                        rs.getString("zona_origen"),
+                        rs.getString("zona_destino"),
+                        rs.getDouble("distancia_metros")
+                );
 
-                // --- ¡CORRECCIÓN! ---
-                // 1. Usamos el constructor principal, que es más simple y seguro.
-                Viaje viaje = new Viaje(origen, destino, origen.getNombre(), destino.getNombre());
-                System.out.println("→ fecha_viaje en BD: " + rs.getString("fecha_viaje"));
-
-                // 2. Asignamos TODOS los valores recuperados de la BD usando los setters.
+                // Asignamos el resto de los valores
                 viaje.setId(rs.getInt("id"));
                 viaje.setConductorId(rs.getInt("id_conductor"));
                 viaje.setUsuarioId(idUsuario);
-                viaje.setDistanciaMetros(rs.getDouble("distancia_metros"));
                 viaje.setPrecio(rs.getDouble("precio_calculado"));
                 viaje.setFecha(rs.getTimestamp("fecha_viaje"));
 
-                // Agregamos el viaje al final de la lista para mantener el orden de la consulta SQL.
-                historial.agregarAlFinal(viaje);
+                historial.agregarAlInicio(viaje); // Se agrega al inicio para que los más recientes queden primeros
             }
 
         } catch (SQLException e) {

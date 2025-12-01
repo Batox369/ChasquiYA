@@ -9,6 +9,7 @@ import app.domain.service.SimuladorMovimientoConductores;
 import app.ui.components.map.MapMarker;
 import app.ui.components.map.RouteRenderer;
 import app.ui.components.map.ZonaRenderer; // Importa el renderer
+import app.ui.components.map.AristaRenderer; // Importa el nuevo renderer
 import app.domain.model.*;
 import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
@@ -294,6 +295,12 @@ public class mapaPanel{
         double umbral = 80 / zoom;
 
         for (Zona zona : grafoZonas.getZonas()) {
+            // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+            // Si la zona no es visible, simplemente la ignoramos y pasamos a la siguiente.
+            if (!zona.isVisible()) {
+                continue;
+            }
+
             // Comparamos las coordenadas del "mundo"
             double zonaX = zona.getLongitud(); // Asumiendo X
             double zonaY = zona.getLatitud();  // Asumiendo Y
@@ -367,9 +374,7 @@ public class mapaPanel{
         // --- 2. DIBUJAR IMAGEN DE FONDO ---
         g2d.drawImage(imagen, 0, 0, null);
 
-        // --- 3. DIBUJAR EL GRAFO (RUTAS Y ZONAS) ---
-
-        // 3A. Dibujar Zonas (Nodos)
+        // 3. Dibujar Zonas (Nodos)
         if (grafoZonas != null) {
             for (Zona zona : grafoZonas.getZonas()) {
                 // --- ¡AQUÍ ESTÁ LA MAGIA! ---
@@ -475,9 +480,12 @@ public class mapaPanel{
     }
 
     public void actualizarGrafo(GrafoZonas nuevoGrafo) {
+        // --- ¡SOLUCIÓN! ---
+        // Simplemente actualizamos la referencia al grafo y forzamos un repintado.
+        // Ya no llamamos a resetearMapa() para no borrar la selección del usuario.
         this.grafoZonas = nuevoGrafo;
-        resetearMapa(); // Limpia selecciones y repinta el canvas
-        System.out.println("mapaPanel: Grafo actualizado y mapa repintado.");
+        resetearMapa();
+        System.out.println("mapaPanel: Grafo actualizado para reflejar cambios (ej. tráfico).");
     }
 
     public void actualizarConductores(List<Conductor> nuevosConductores) {
@@ -496,5 +504,9 @@ public class mapaPanel{
     public void setTripActive() {
         this.isTripActive = true;
         mapaCanvas.setCursor(Cursor.getDefaultCursor()); // Cambia el cursor para indicar que no se puede interactuar
+    }
+
+    public void repaintMapa() {
+        if (mapaCanvas != null) mapaCanvas.repaint();
     }
 }

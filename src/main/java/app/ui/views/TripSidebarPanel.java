@@ -283,10 +283,10 @@ public class TripSidebarPanel extends JPanel {
 
         updateInfoValue(distanciaPanel, viaje.getDistanciaFormateada());
 
-        int tiempo = calcularTiempo(viaje.getDistanciaMetros());
-        updateInfoValue(tiempoPanel, tiempo + " min");
+        // --- ¡CORRECCIÓN! Ahora le pedimos al objeto Viaje que nos dé el tiempo formateado. ---
+        updateInfoValue(tiempoPanel, viaje.getTiempoEstimadoFormateado());
 
-        double precio = calcularPrecio(viaje.getDistanciaMetros());
+        double precio = calcularPrecio(viaje.getDistanciaMetros()); // Mantendremos el precio aquí por ahora
         updateInfoValue(precioPanel, String.format("S/ %.2f", precio));
 
         solicitarButton.setEnabled(true);
@@ -299,15 +299,9 @@ public class TripSidebarPanel extends JPanel {
         }
     }
 
-    private int calcularTiempo(double distanciaMetros) {
-        double velocidadKmH = 40.0;
-        double distanciaKm = distanciaMetros / 1000;
-        return (int) Math.ceil((distanciaKm / velocidadKmH) * 60);
-    }
-
     private double calcularPrecio(double distanciaMetros) {
-        double tarifaBase = 5.0;
-        double costoPorKm = 3.5;
+        double tarifaBase = 4.2;
+        double costoPorKm = 1.8;
         double distanciaKm = distanciaMetros / 1000;
         return tarifaBase + (distanciaKm * costoPorKm);
     }

@@ -16,7 +16,7 @@ import java.util.Random;
  */
 public class SimuladorMovimientoConductores {
 
-    private static final int VELOCIDAD_M_POR_S = 2; // 10 metros por segundo
+    private static final int VELOCIDAD_M_POR_S = 40; // 10 metros por segundo
     private static final int INTERVALO_ACTUALIZACION_MS = 10; // Actualiza la pantalla ~20 veces por segundo
 
     private final Timer timer;
@@ -163,6 +163,39 @@ public class SimuladorMovimientoConductores {
                 // Ha llegado al final de un tramo.
                 Zona zonaAlcanzada = conductor.getZonaDestinoViaje();
 
+                // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
+                // Antes de hacer nada, validamos si la zona de destino todavía existe en el grafo actual.
+                GrafoZonas grafoActual = GestorGrafos.getInstancia().getGrafo();
+                Zona zonaDestinoValidada = grafoActual.getZona(zonaAlcanzada.getId());
+
+                if (zonaDestinoValidada == null) {
+                    // La zona fue eliminada mientras el conductor viajaba. ¡El conductor está "perdido"!
+                    System.err.printf("[WARN] Conductor %s llegó a una zona que ya no existe (ID: %d). Reubicando...%n",
+                            conductor.getNombreCompleto(), zonaAlcanzada.getId());
+
+                    // Lógica de recuperación: encontrar la zona existente más cercana a su posición actual.
+                    Zona zonaMasCercana = encontrarZonaMasCercanaDesdeCoordenadas(conductor.getPosicionActual(), grafoActual);
+
+                    if (zonaMasCercana != null) {
+                        // Reubicamos al conductor en la zona más cercana.
+                        conductor.setZonaActualId(zonaMasCercana.getId());
+                        conductor.setPosicionActual(new Coordenada(zonaMasCercana.getLongitud(), zonaMasCercana.getLatitud()));
+                        System.out.printf("[RECOVERY] Conductor %s reubicado en la zona más cercana: '%s'.%n",
+                                conductor.getNombreCompleto(), zonaMasCercana.getNombre());
+                    } else {
+                        // Caso extremo: no quedan zonas en el mapa. El conductor se queda inactivo.
+                        System.err.printf("[CRITICAL] No hay zonas restantes para reubicar al conductor %s. Pasando a INACTIVO.%n",
+                                conductor.getNombreCompleto());
+                        conductor.setEstado(EstadoConductor.INACTIVO);
+                    }
+
+                    // En cualquier caso, se detiene su viaje actual y se resetean sus fases.
+                    conductor.iniciarTramo(zonaMasCercana, null, 0); // Detiene el movimiento.
+                    conductor.setRutaAsignada(null);
+                    conductor.setTripPhase(TripPhase.NONE);
+                    continue; // Pasamos al siguiente conductor en este tick.
+                }
+
                 // --- Lógica de llegada a un nodo ---
                 if (conductor.getEstado() == EstadoConductor.OCUPADO) {
                     // Si está en la fase final de la recogida
@@ -197,6 +230,28 @@ public class SimuladorMovimientoConductores {
                 conductor.setPosicionActual(new Coordenada(x, y));
             }
         }
+    }
+
+    /**
+     * Encuentra la zona más cercana a un punto de coordenadas específico en el mapa.
+     * @param posicion La posición actual (en coordenadas del mundo/mapa).
+     * @param grafo El grafo actual con las zonas existentes.
+     * @return La Zona más cercana, o null si no hay zonas en el grafo.
+     */
+    private Zona encontrarZonaMasCercanaDesdeCoordenadas(Coordenada posicion, GrafoZonas grafo) {
+        Zona masCercana = null;
+        double distanciaMinima = Double.MAX_VALUE;
+
+        if (grafo == null || grafo.getZonas().isEmpty()) return null;
+
+        for (Zona candidata : grafo.getZonas()) {
+            double distancia = posicion.calcularDistancia(new Coordenada(candidata.getLongitud(), candidata.getLatitud()));
+            if (distancia < distanciaMinima) {
+                distanciaMinima = distancia;
+                masCercana = candidata;
+            }
+        }
+        return masCercana;
     }
 
     private void calcularYAsignarRutaDeRecogida(Conductor conductor) {

@@ -12,10 +12,15 @@ public class GrafoZonas {
         adyacencias.putIfAbsent(zona, new ArrayList<>());
     }
 
-    public void conectarZonas(Zona a, Zona b, double distancia) {
+    public void conectarZonas(Zona a, Zona b, double distancia, boolean trafico) {
         // Grafo no dirigido: la conexión es en ambos sentidos
-        adyacencias.get(a).add(new Conexion(b, distancia));
-        adyacencias.get(b).add(new Conexion(a, distancia));
+        adyacencias.get(a).add(new Conexion(b, distancia, trafico));
+        adyacencias.get(b).add(new Conexion(a, distancia, trafico));
+    }
+
+    // --- ¡SOLUCIÓN! Constructor sobrecargado que asume 'trafico = false' por defecto ---
+    public void conectarZonas(Zona a, Zona b, double distancia) {
+        conectarZonas(a, b, distancia, false);
     }
 
     public Zona getZona(int id) {
@@ -34,9 +39,16 @@ public class GrafoZonas {
     public static class Conexion {
         public final Zona destino;
         public final double distancia;
-        public Conexion(Zona destino, double distancia) {
+        private boolean trafico; // No es final para poder modificarlo
+
+        public Conexion(Zona destino, double distancia, boolean trafico) {
             this.destino = destino;
             this.distancia = distancia;
+            this.trafico = trafico;
+        }
+
+        public Conexion(Zona destino, double distancia) {
+            this(destino, distancia, false);
         }
 
         public Zona getDestino() {
@@ -47,6 +59,27 @@ public class GrafoZonas {
             return distancia;
         }
 
+        public boolean tieneTrafico() {
+            return trafico;
+        }
+
+        public void setTrafico(boolean trafico) {
+            this.trafico = trafico;
+        }
+
+    }
+
+    /**
+     * Busca y devuelve la conexión específica desde una zona de origen a una de destino.
+     * @return Un Optional con la conexión si existe, o un Optional vacío si no.
+     */
+    public Optional<Conexion> getConexionEntre(Zona origen, Zona destino) {
+        if (adyacencias.containsKey(origen)) {
+            return adyacencias.get(origen).stream()
+                    .filter(c -> c.getDestino().equals(destino))
+                    .findFirst();
+        }
+        return Optional.empty();
     }
 
     public double getDistanciaEntre(Zona a, Zona b) {
