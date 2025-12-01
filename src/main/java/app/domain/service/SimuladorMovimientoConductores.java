@@ -20,7 +20,7 @@ public class SimuladorMovimientoConductores {
     private static final int INTERVALO_ACTUALIZACION_MS = 10; // Actualiza la pantalla ~20 veces por segundo
 
     private final Timer timer;
-    private final List<Conductor> conductores;
+    private List<Conductor> conductores;
     private final Random random = new Random();
     private final GestorRutas gestorRutas = new GestorRutas(); // El simulador ahora necesita su propio gestor de rutas
     private final MainFrame mainFrame; // <-- ¡NUEVO! Referencia al frame principal
@@ -338,5 +338,9 @@ public class SimuladorMovimientoConductores {
         List<Zona> ruta = conductor.getRutaAsignada();
         if (ruta == null || ruta.isEmpty() || zona == null) return false;
         return zona.getId() == ruta.get(ruta.size() - 1).getId();
+    }
+
+    public void setConductores(List<Conductor> nuevosConductores) {
+        this.conductores = nuevosConductores;
     }
 }

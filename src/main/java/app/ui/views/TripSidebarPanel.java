@@ -1,9 +1,12 @@
 package app.ui.views;
 
+import app.domain.model.Conductor;
 import app.domain.model.Viaje;
 import app.domain.model.Coordenada;
 import app.infrastructure.shared.constants.Colors;
 import app.infrastructure.shared.constants.UIFonts;
+import app.ui.components.ColorSwatch;
+import app.ui.components.map.ConductorRenderer;
 import app.infrastructure.shared.constants.*;
 
 
@@ -22,6 +25,7 @@ public class TripSidebarPanel extends JPanel {
     private JButton cancelarButton;
     private JPanel asignandoPanel; // <-- NUEVO: Panel para el estado "Asignando"
     private JPanel conductorPanel; // <-- NUEVO: Panel para mostrar al conductor asignado
+    private ColorSwatch conductorColorSwatch; // <-- ¡NUEVO! Para mostrar el color
 
     private Viaje viajeActual;
 
@@ -240,6 +244,14 @@ public class TripSidebarPanel extends JPanel {
         conductorPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
         conductorPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 80));
 
+        // --- ¡NUEVO! ---
+        // Panel para el nombre que incluirá el swatch de color
+        JPanel nombreConductorPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        nombreConductorPanel.setOpaque(false);
+
+        conductorColorSwatch = new ColorSwatch();
+        nombreConductorPanel.add(conductorColorSwatch);
+
         // Reutilizamos el método createInfoLabel para mantener la consistencia
         JPanel nombrePanel = createInfoLabel("👤 Conductor", "...");
         conductorPanel.add(nombrePanel);
@@ -247,6 +259,9 @@ public class TripSidebarPanel extends JPanel {
 
         JPanel placaPanel = createInfoLabel("    Placa", "...");
         conductorPanel.add(placaPanel);
+
+        // Añadimos el swatch al panel del nombre
+        nombrePanel.add(nombreConductorPanel, BorderLayout.WEST);
 
         conductorPanel.setVisible(false); // Oculto por defecto
         add(conductorPanel);
@@ -346,8 +361,13 @@ public class TripSidebarPanel extends JPanel {
      * Muestra la información del conductor que ha sido asignado al viaje.
      * @param conductor El conductor asignado.
      */
-    public void mostrarConductorAsignado(app.domain.model.Conductor conductor) {
+    public void mostrarConductorAsignado(Conductor conductor) {
         asignandoPanel.setVisible(false); // Ocultamos "Asignando..."
+
+        // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+        // 1. Obtenemos el color del conductor usando la misma lógica que el mapa.
+        Color color = ConductorRenderer.getColorForConductor(conductor.getId());
+        conductorColorSwatch.setColor(color);
 
         // Actualizamos los valores usando el mismo método que para el resto de la info
         updateInfoValue((JPanel) conductorPanel.getComponent(0), conductor.getNombreCompleto());

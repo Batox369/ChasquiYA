@@ -4,6 +4,8 @@ import app.domain.model.*;
 import app.domain.model.enums.EstadoConductor;
 import app.domain.model.enums.TripPhase;
 import app.domain.service.*;
+import app.domain.repository.ConductorRepository;
+import app.domain.repository.GrafoRepository;
 import app.infrastructure.persistence.ConexionBD;
 import app.ui.panels.LoadingPanel;
 import app.ui.panels.*;
@@ -11,6 +13,9 @@ import app.ui.components.modern.ModernMessageDialog;
 import app.infrastructure.shared.constants.Colors;
 import app.ui.views.SideNavigation;
 import app.ui.views.TopBar;
+import app.domain.structures.ListaEnlazadaSimple;
+import app.infrastructure.persistence.MySQLConductorRepository;
+import app.infrastructure.persistence.MySQLGrafoRepository;
 import app.ui.views.TripSidebarPanel;
 
 import java.util.List;
@@ -37,6 +42,7 @@ public class MainFrame extends JFrame {
     private DashboardPanel dashboardPanel;
     private HistorialPanel historialPanel;
     private PerfilPanel perfilPanel;
+    private EstadisticasPanel estadisticasPanel;
     private AdminMenuPanel adminPanel;
 
     private boolean modoColocarZona = false;
@@ -277,6 +283,7 @@ public class MainFrame extends JFrame {
         dashboardPanel = new DashboardPanel();
         historialPanel = new HistorialPanel();
         perfilPanel = new PerfilPanel(this);
+        estadisticasPanel = new EstadisticasPanel();
         adminPanel = new AdminMenuPanel(this);
     }
 
@@ -295,6 +302,12 @@ public class MainFrame extends JFrame {
             perfilPanel.actualizarEstadisticas(); // <-- ¡AQUÍ! Actualizamos los datos antes de mostrar
             mostrarMenuYPanel(perfilPanel);
             sideNav.setSelectedButton("perfil");
+        });
+        sideNav.addEstadisticasListener(e -> {
+            // Mostramos el panel inmediatamente, la carga se hará en segundo plano
+            mostrarMenuYPanel(estadisticasPanel);
+            cargarEstadisticasAsincrono(); // Iniciamos la carga
+            sideNav.setSelectedButton("estadisticas");
         });
         sideNav.addAdminListener(e -> {
             mostrarAdminMenu();
@@ -436,6 +449,44 @@ public class MainFrame extends JFrame {
             }
         };
 
+        worker.execute();
+    }
+
+    public void cargarEstadisticasAsincrono() {
+        // No creamos una nueva instancia, usamos la que ya existe para mantener el estado.
+        estadisticasPanel.mostrarLoading();
+        SwingWorker<ListaEnlazadaSimple<?>[], Void> worker = new SwingWorker<>() {
+            @Override
+            protected ListaEnlazadaSimple<?>[] doInBackground() throws Exception {
+                // --- ¡LÓGICA CORREGIDA! ---
+                // La carga de datos se hace aquí, en un hilo separado para no congelar la UI.
+                ConductorRepository conductorRepo = new MySQLConductorRepository();
+                ListaEnlazadaSimple<Conductor> topConductores = conductorRepo.getTopConductores(5);
+
+                GrafoRepository grafoRepo = new MySQLGrafoRepository();
+                ListaEnlazadaSimple<Zona> topZonas = grafoRepo.getTopZonas(5);
+
+                return new ListaEnlazadaSimple[]{topConductores, topZonas};
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    // Cuando termina, actualizamos la UI en el hilo de eventos de Swing.
+                    ListaEnlazadaSimple<?>[] resultados = get();
+                    ListaEnlazadaSimple<Conductor> topConductores = (ListaEnlazadaSimple<Conductor>) resultados[0];
+                    ListaEnlazadaSimple<Zona> topZonas = (ListaEnlazadaSimple<Zona>) resultados[1];
+
+                    // Nos aseguramos de que la actualización ocurra en el hilo de eventos de Swing
+                    SwingUtilities.invokeLater(() -> {
+                        estadisticasPanel.refrescarEstadisticas(topConductores, topZonas);
+                        estadisticasPanel.ocultarLoading();
+                    });
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        };
         worker.execute();
     }
 

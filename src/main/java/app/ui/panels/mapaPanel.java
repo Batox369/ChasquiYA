@@ -55,6 +55,10 @@ public class mapaPanel{
     private Zona zonaDestino;
     private java.util.List<Zona> rutaActual;
     private List<Conductor> conductores;
+    // --- ¡NUEVO! Banderas para controlar la visualización de admin ---
+    private boolean aristasVisibles = false;
+    private boolean nodosInvisiblesVisibles = false;
+
     private SimuladorMovimientoConductores simulador;
 
     public mapaPanel(MainFrame mainFrame, TripSidebarPanel tripSidebar, GrafoZonas grafoZonas, GestorRutas gestorRutas, GestorConductores gestorConductores) {
@@ -79,7 +83,7 @@ public class mapaPanel{
     }
     private void loadImage() {
         try {
-            imagen = ImageIO.read(new File("src/main/resources/mapaunmsm.jpg"));
+            imagen = ImageIO.read(new File("src/main/resources/MapaED.jpg"));
         } catch (Exception e) {
             e.printStackTrace();
             imagen = new BufferedImage(800, 600, BufferedImage.TYPE_INT_RGB);
@@ -296,7 +300,8 @@ public class mapaPanel{
 
         for (Zona zona : grafoZonas.getZonas()) {
             // --- ¡AQUÍ ESTÁ LA MAGIA! ---
-            // Si la zona no es visible, simplemente la ignoramos y pasamos a la siguiente.
+            // Si la zona no es visible, la ignoramos y pasamos a la siguiente,
+            // A MENOS QUE el admin haya activado la opción de ver nodos invisibles.
             if (!zona.isVisible()) {
                 continue;
             }
@@ -374,14 +379,31 @@ public class mapaPanel{
         // --- 2. DIBUJAR IMAGEN DE FONDO ---
         g2d.drawImage(imagen, 0, 0, null);
 
+        // --- ¡NUEVO! Dibujar TODAS las aristas si la opción de admin está activada ---
+        if (aristasVisibles && grafoZonas != null) {
+            java.util.Set<String> aristasDibujadas = new java.util.HashSet<>();
+            for (Zona zona : grafoZonas.getZonas()) {
+                for (GrafoZonas.Conexion conexion : grafoZonas.getConexiones(zona)) {
+                    Zona destino = conexion.getDestino();
+                    // Creamos una clave única para no dibujar la arista dos veces
+                    String claveArista = zona.getId() < destino.getId() ? zona.getId() + "-" + destino.getId() : destino.getId() + "-" + zona.getId();
+                    if (!aristasDibujadas.contains(claveArista)) {
+                        AristaRenderer.drawArista(g2d, zona, conexion, true); // true para mostrar el peso
+                        aristasDibujadas.add(claveArista);
+                    }
+                }
+            }
+        }
+
         // 3. Dibujar Zonas (Nodos)
         if (grafoZonas != null) {
             for (Zona zona : grafoZonas.getZonas()) {
                 // --- ¡AQUÍ ESTÁ LA MAGIA! ---
-                // Solo dibujamos la zona si es visible.
-                if (zona.isVisible()) {
+                // Solo dibujamos la zona si es visible, o si el admin activó la vista especial.
+                if (zona.isVisible() || nodosInvisiblesVisibles) {
                     boolean seleccionada = (zona == zonaOrigen || zona == zonaDestino);
-                    ZonaRenderer.drawZona(g2d, zona, seleccionada);
+                    // Pasamos un flag extra para que el renderer sepa si debe dibujarla de forma especial
+                    ZonaRenderer.drawZona(g2d, zona, seleccionada, !zona.isVisible());
                 }
             }
         }
@@ -490,6 +512,9 @@ public class mapaPanel{
 
     public void actualizarConductores(List<Conductor> nuevosConductores) {
         this.conductores = nuevosConductores;
+        // --- ¡AQUÍ ESTÁ LA SOLUCIÓN! ---
+        // Notificamos también al simulador sobre la nueva lista de conductores.
+        if (this.simulador != null) this.simulador.setConductores(nuevosConductores);
         mapaCanvas.repaint();
         System.out.println("mapaPanel: Lista de conductores actualizada y mapa repintado.");
     }
@@ -508,5 +533,23 @@ public class mapaPanel{
 
     public void repaintMapa() {
         if (mapaCanvas != null) mapaCanvas.repaint();
+    }
+
+    /**
+     * Establece si todas las aristas del grafo deben ser visibles.
+     * @param visible true para mostrar todas las aristas, false para ocultarlas.
+     */
+    public void setAristasVisibles(boolean visible) {
+        this.aristasVisibles = visible;
+        repaintMapa();
+    }
+
+    /**
+     * Establece si los nodos marcados como invisibles deben ser visibles (modo admin).
+     * @param visible true para mostrar los nodos invisibles, false para ocultarlos.
+     */
+    public void setNodosInvisiblesVisibles(boolean visible) {
+        this.nodosInvisiblesVisibles = visible;
+        repaintMapa();
     }
 }

@@ -30,6 +30,10 @@ public class AdminMenuPanel extends JPanel {
     // private final ModernActionButton btnVolver; // Eliminado
     private final MainFrame mainFrame;
 
+    // --- ¡NUEVO! Opciones de Visualización ---
+    private ModernCheckBox chkMostrarAristas;
+    private ModernCheckBox chkMostrarNodosInvisibles;
+
     // Conductores
     private ModernTextField conductorNombreField;
     private ModernComboBox<String> conductorZoneSelector;
@@ -94,6 +98,18 @@ public class AdminMenuPanel extends JPanel {
         titlePanel.add(title);
 
         header.add(titlePanel, BorderLayout.WEST);
+
+        // Panel para las nuevas opciones de visualización
+        JPanel optionsPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 15, 0));
+        optionsPanel.setOpaque(false);
+
+        chkMostrarAristas = new ModernCheckBox("Ver Aristas y Pesos");
+        chkMostrarNodosInvisibles = new ModernCheckBox("Ver Nodos Invisibles");
+
+        optionsPanel.add(chkMostrarAristas);
+        optionsPanel.add(chkMostrarNodosInvisibles);
+
+        header.add(optionsPanel, BorderLayout.EAST);
 
         return header;
     }
@@ -385,6 +401,7 @@ public class AdminMenuPanel extends JPanel {
         setupZonaListeners();
         setupEliminarConexionListener();
         setupEliminarZonaListener();
+        setupVisualListeners();
     }
 
     private void setupConductorListeners() {
@@ -415,7 +432,7 @@ public class AdminMenuPanel extends JPanel {
                 new ModernMessageDialog(mainFrame, "Éxito", String.format("Conductor '%s' agregado exitosamente a la zona '%s'.", nombreConductor, nombreZona), ModernMessageDialog.MessageType.SUCCESS).showDialog();
                 conductorNombreField.setText("");
                 conductorZoneSelector.setSelectedIndex(-1); // Limpiar selección
-
+                
                 // --- ¡NUEVO! Recargar y actualizar el mapa con el nuevo conductor ---
                 // 1. Recargamos la lista de conductores desde la BD
                 GestorConductores gestorConductores = GestorConductores.getInstancia();
@@ -549,6 +566,20 @@ public class AdminMenuPanel extends JPanel {
                 mainFrame.getRMapaPanel().actualizarGrafo(GestorGrafos.getInstancia().getGrafo());
             } else {
                 new ModernMessageDialog(mainFrame, "Error", "Ocurrió un error al eliminar la zona.", ModernMessageDialog.MessageType.ERROR).showDialog();
+            }
+        });
+    }
+
+    private void setupVisualListeners() {
+        chkMostrarAristas.addActionListener(e -> {
+            if (mainFrame.getRMapaPanel() != null) {
+                mainFrame.getRMapaPanel().setAristasVisibles(chkMostrarAristas.isSelected());
+            }
+        });
+
+        chkMostrarNodosInvisibles.addActionListener(e -> {
+            if (mainFrame.getRMapaPanel() != null) {
+                mainFrame.getRMapaPanel().setNodosInvisiblesVisibles(chkMostrarNodosInvisibles.isSelected());
             }
         });
     }

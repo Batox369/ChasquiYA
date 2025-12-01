@@ -4,6 +4,7 @@ import app.domain.model.Arista;
 import app.domain.model.Conductor;
 import app.domain.model.Coordenada;
 import app.domain.repository.ConductorRepository;
+import app.domain.structures.ListaEnlazadaSimple;
 import app.domain.model.Zona;
 import app.domain.repository.GrafoRepository;
 
@@ -202,5 +203,33 @@ public class MySQLGrafoRepository implements GrafoRepository {
             }
         }
         return masCercana;
+    }
+
+    @Override
+    public ListaEnlazadaSimple<Zona> getTopZonas(int limit) {
+        ListaEnlazadaSimple<Zona> topZonas = new ListaEnlazadaSimple<>();
+        // --- ¡AQUÍ ESTÁ LA MAGIA! ---
+        // Añadimos un filtro para que solo considere las zonas visibles.
+        String sql = "SELECT id, nombre, latitud, longitud, visible, numero_viajes " + "FROM zonas WHERE visible = TRUE " + "ORDER BY numero_viajes DESC LIMIT ?";
+        try (Connection conn = ConexionBD.getInstance().getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, limit);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Zona z = new Zona(
+                            rs.getInt("id"),
+                            rs.getString("nombre"),
+                            rs.getDouble("latitud"),
+                            rs.getDouble("longitud"),
+                            rs.getBoolean("visible")
+                    );
+                    z.setNumeroViajes(rs.getInt("numero_viajes"));
+                    topZonas.agregarAlFinal(z);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return topZonas;
     }
 }

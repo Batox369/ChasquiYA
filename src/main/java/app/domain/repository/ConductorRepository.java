@@ -1,6 +1,7 @@
 package app.domain.repository;
 
 import app.domain.model.Conductor;
+import app.domain.structures.ListaEnlazadaSimple;
 
 import java.util.List;
 
@@ -36,4 +37,11 @@ public interface ConductorRepository {
      * @return true si la eliminación fue exitosa, false en caso contrario.
      */
     boolean delete(int conductorId);
+
+    /**
+     * Obtiene una lista de los conductores con más viajes, ordenados de mayor a menor.
+     * @param limit El número máximo de conductores a devolver.
+     * @return Una lista de conductores.
+     */
+    ListaEnlazadaSimple<Conductor> getTopConductores(int limit);
 }

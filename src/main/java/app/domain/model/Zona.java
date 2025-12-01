@@ -17,12 +17,14 @@ public class Zona {
     private double xMapa;     // coordenada escalada (en píxeles)
     private double yMapa;
     private boolean visible;
+    private int numeroViajes;
 
     public Zona(int id, String nombre) {
         this.id = id;
         this.nombre = nombre;
         this.conductores = new CircularList();
         this.visible = true; // Por defecto, una zona es visible
+        this.numeroViajes = 0;
     }
 
     public Zona(int id, String nombre, double latitud, double longitud, boolean visible) {
@@ -44,6 +46,7 @@ public class Zona {
     public double getLatitud() { return latitud; }
     public double getLongitud() { return longitud; }
     public boolean isVisible() { return visible; }
+    public int getNumeroViajes() { return numeroViajes; }
 
     public void setLatitud(double latitud) {
         this.latitud = latitud;
@@ -55,6 +58,10 @@ public class Zona {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
+    }
+
+    public void setNumeroViajes(int numeroViajes) {
+        this.numeroViajes = numeroViajes;
     }
 
     public double getXMapa() { return xMapa; }

@@ -10,34 +10,47 @@ public class MySQLHistorialRepository implements HistorialRepository {
 
     @Override
     public boolean guardarViaje(Viaje viaje) {
-        String sql = "INSERT INTO historial_viajes (id_usuario, id_conductor, zona_origen, zona_destino, distancia_metros, precio_calculado, fecha_viaje) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String insertViajeSql = "INSERT INTO historial_viajes (id_usuario, id_conductor, zona_origen, zona_destino, distancia_metros, precio_calculado, fecha_viaje) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        String updateConductorSql = "UPDATE conductores SET viajes_realizados = viajes_realizados + 1 WHERE id = ?";
+        String updateZonaSql = "UPDATE zonas SET numero_viajes = numero_viajes + 1 WHERE nombre = ?";
 
-        // Obtenemos la conexión compartida ANTES del try-with-resources
-        Connection connection = null;
+        try (Connection conn = ConexionBD.getInstance().getConnection()) {
+            conn.setAutoCommit(false); // Iniciar transacción
 
-        try {
-            connection = ConexionBD.getInstance().getConnection();
+            try (PreparedStatement psInsert = conn.prepareStatement(insertViajeSql);
+                 PreparedStatement psUpdateConductor = conn.prepareStatement(updateConductorSql);
+                 PreparedStatement psUpdateZona = conn.prepareStatement(updateZonaSql)) {
+
+                // 1. Insertar el viaje en el historial
+                psInsert.setInt(1, viaje.getUsuarioId());
+                psInsert.setInt(2, viaje.getConductorId());
+                psInsert.setString(3, viaje.getNombreOrigen());
+                psInsert.setString(4, viaje.getNombreDestino());
+                psInsert.setDouble(5, viaje.getDistanciaMetros());
+                psInsert.setDouble(6, viaje.getPrecio());
+                psInsert.setTimestamp(7, new Timestamp(viaje.getFecha().getTime()));
+                psInsert.executeUpdate();
+
+                // 2. Actualizar contador del conductor
+                psUpdateConductor.setInt(1, viaje.getConductorId());
+                psUpdateConductor.executeUpdate();
+
+                // 3. Actualizar contador de la zona de destino
+                psUpdateZona.setString(1, viaje.getNombreDestino());
+                psUpdateZona.executeUpdate();
+
+                conn.commit(); // Confirmar todos los cambios
+                return true;
+
+            } catch (SQLException e) {
+                conn.rollback(); // Revertir cambios si algo falla
+                e.printStackTrace();
+                return false;
+            } finally {
+                conn.setAutoCommit(true); // Restaurar auto-commit
+            }
         } catch (SQLException e) {
-            System.err.println("Error al obtener conexión con la BD: " + e.getMessage());
-        }
-
-
-        // Solo el PreparedStatement (que es temporal) va dentro del try-with-resources
-        try (PreparedStatement pstmt = connection.prepareStatement(sql)) {
-            pstmt.setInt(1, viaje.getUsuarioId());
-            pstmt.setInt(2, viaje.getConductorId());
-
-            pstmt.setString(3, viaje.getNombreOrigen());
-            pstmt.setString(4, viaje.getNombreDestino());
-            pstmt.setDouble(5, viaje.getDistanciaMetros());
-            pstmt.setDouble(6, viaje.getPrecio());
-            pstmt.setTimestamp(7, new Timestamp(viaje.getFecha().getTime()));
-
-            int affectedRows = pstmt.executeUpdate();
-            return affectedRows > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Error al guardar el viaje en la base de datos: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }
@@ -78,7 +91,7 @@ public class MySQLHistorialRepository implements HistorialRepository {
                 viaje.setPrecio(rs.getDouble("precio_calculado"));
                 viaje.setFecha(rs.getTimestamp("fecha_viaje"));
 
-                historial.agregarAlInicio(viaje); // Se agrega al inicio para que los más recientes queden primeros
+                historial.agregarAlFinal(viaje); // Se agrega al inicio para que los más recientes queden primeros
             }
 
         } catch (SQLException e) {

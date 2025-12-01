@@ -12,6 +12,7 @@ public class SideNavigation extends JPanel {
     private ModernButton solicitarViajeBtn;
     private ModernButton historialBtn;
     private ModernButton perfilBtn;
+    private ModernButton estadisticasBtn;
 
     // Componentes para la sección de administrador
     private ModernButton adminBtn;
@@ -39,6 +40,7 @@ public class SideNavigation extends JPanel {
         solicitarViajeBtn = new ModernButton("Solicitar Viaje", "coche.png");
         historialBtn = new ModernButton("Historial", "reloj.png");
         perfilBtn = new ModernButton("Mi Perfil", "user.png");
+        estadisticasBtn = new ModernButton("Estadísticas", "estadisticas.png");
 
 
         solicitarViajeBtn.setSelected(true);
@@ -48,6 +50,8 @@ public class SideNavigation extends JPanel {
         add(historialBtn);
         add(Box.createRigidArea(new Dimension(0, 10)));
         add(perfilBtn);
+        add(Box.createRigidArea(new Dimension(0, 10)));
+        add(estadisticasBtn);
         add(Box.createVerticalGlue());
 
         // --- Sección de Administrador (inicialmente oculta) ---
@@ -83,6 +87,10 @@ public class SideNavigation extends JPanel {
         perfilBtn.addActionListener(listener);
     }
 
+    public void addEstadisticasListener(ActionListener listener) {
+        estadisticasBtn.addActionListener(listener);
+    }
+
     public void addAdminListener(ActionListener listener) {
         adminBtn.addActionListener(listener);
     }
@@ -91,6 +99,7 @@ public class SideNavigation extends JPanel {
         solicitarViajeBtn.setSelected(false);
         historialBtn.setSelected(false);
         perfilBtn.setSelected(false);
+        estadisticasBtn.setSelected(false);
         adminBtn.setSelected(false);
 
         switch (buttonName) {
@@ -102,6 +111,9 @@ public class SideNavigation extends JPanel {
                 break;
             case "perfil":
                 perfilBtn.setSelected(true);
+                break;
+            case "estadisticas":
+                estadisticasBtn.setSelected(true);
                 break;
             case "admin":
                 adminBtn.setSelected(true);
