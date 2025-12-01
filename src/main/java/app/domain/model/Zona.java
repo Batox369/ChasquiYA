@@ -34,12 +34,10 @@ public class Zona {
         this.visible = visible;
     }
 
-    // --- ¡SOLUCIÓN! Constructor sobrecargado que asume 'visible = true' ---
     public Zona(int id, String nombre, double latitud, double longitud) {
         this(id, nombre, latitud, longitud, true);
     }
 
-    // --- Getters y Setters ---
     public int getId() { return id; }
     public String getNombre() { return nombre; }
 
@@ -56,33 +54,14 @@ public class Zona {
         this.longitud = longitud;
     }
 
-    public void setVisible(boolean visible) {
-        this.visible = visible;
-    }
 
     public void setNumeroViajes(int numeroViajes) {
         this.numeroViajes = numeroViajes;
     }
 
-    public double getXMapa() { return xMapa; }
-    public double getYMapa() { return yMapa; }
     public void setCoordenadasMapa(double x, double y) {
         this.xMapa = x;
         this.yMapa = y;
-    }
-
-    // --- Enlaces lógicos ---
-    public Zona getIzquierda() { return izquierda; }
-    public Zona getDerecha() { return derecha; }
-    public void setIzquierda(Zona izquierda) { this.izquierda = izquierda; }
-    public void setDerecha(Zona derecha) { this.derecha = derecha; }
-
-    // --- Conductores ---
-    public void agregarConductor(Conductor c) { conductores.add(c); }
-    public boolean eliminarConductorPorNombre(String nombre) { return conductores.removeByName(nombre); }
-
-    public void imprimirConductores() {
-        System.out.println("Zona " + id + " (" + nombre + "): " + conductores.toString());
     }
 
     @Override

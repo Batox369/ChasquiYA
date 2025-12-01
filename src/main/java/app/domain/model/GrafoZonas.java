@@ -4,7 +4,6 @@ import java.util.*;
 
 public class GrafoZonas {
     private final Map<Integer, Zona> zonas = new HashMap<>();
-    // Usamos Map<Zona, List<Conexion>> para representar el grafo
     private final Map<Zona, List<Conexion>> adyacencias = new HashMap<>();
 
     public void agregarZona(Zona zona) {
@@ -13,12 +12,9 @@ public class GrafoZonas {
     }
 
     public void conectarZonas(Zona a, Zona b, double distancia, boolean trafico) {
-        // Grafo no dirigido: la conexión es en ambos sentidos
         adyacencias.get(a).add(new Conexion(b, distancia, trafico));
         adyacencias.get(b).add(new Conexion(a, distancia, trafico));
     }
-
-    // --- ¡SOLUCIÓN! Constructor sobrecargado que asume 'trafico = false' por defecto ---
     public void conectarZonas(Zona a, Zona b, double distancia) {
         conectarZonas(a, b, distancia, false);
     }
@@ -32,7 +28,7 @@ public class GrafoZonas {
     }
 
     public List<Conexion> getConexiones(Zona zona) {
-        // Devuelve una lista vacía si la zona no tiene conexiones para evitar errores
+
         return adyacencias.getOrDefault(zona, new ArrayList<>());
     }
 
@@ -69,10 +65,6 @@ public class GrafoZonas {
 
     }
 
-    /**
-     * Busca y devuelve la conexión específica desde una zona de origen a una de destino.
-     * @return Un Optional con la conexión si existe, o un Optional vacío si no.
-     */
     public Optional<Conexion> getConexionEntre(Zona origen, Zona destino) {
         if (adyacencias.containsKey(origen)) {
             return adyacencias.get(origen).stream()
